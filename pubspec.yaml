@@ -9,8 +9,11 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  dio: ^5.8.0+1
   fl_chart: ^0.70.2
   file_picker: ^8.3.1
+  path_provider: ^2.1.5
+  flutter_dotenv: ^5.2.1
   cupertino_icons: ^1.0.8
   shared_preferences: ^2.5.1
   flutter_ai_toolkit: ^0.6.8
