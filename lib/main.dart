@@ -1,8 +1,16 @@
+import 'package:pulse/ui/chatUi.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:awesome_notifications/awesome_notifications.dart';
 
-void main() async {
+Future main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  //.env configuration
+  try {
+    await dotenv.load(fileName: ".env");
+  } catch (e) {
+    throw Exception('Error loading .env file: $e');
+  }
   //notification configuration
   await AwesomeNotifications().initialize(null, [
     NotificationChannel(
@@ -22,13 +30,12 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      home: const MyHomePage(),
-    );
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+          useMaterial3: true,
+        ),
+        home: const MyHomePage());
   }
 }
 
@@ -45,7 +52,9 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     super.initState();
     AwesomeNotifications().isNotificationAllowed().then((isAllowed) {
-      if (!isAllowed) AwesomeNotifications().requestPermissionToSendNotifications();
+      if (!isAllowed) {
+        AwesomeNotifications().requestPermissionToSendNotifications();
+      }
     });
   }
 
@@ -53,10 +62,36 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: const Text("Pulse"),
+        backgroundColor: Colors.black87,
+        centerTitle: true,
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            IconButton(
+              iconSize: 20,
+              icon: const Icon(Icons.person, color: Colors.white),
+              onPressed: () {},
+            ),
+            SizedBox(height: 30,child:
+            ElevatedButton(
+              style: ButtonStyle(
+                backgroundColor: WidgetStateProperty.all(const Color(0xFF800000)),
+              ),
+              onPressed: () {},
+              child: const Text(
+                'Emergency',
+                style: TextStyle(fontSize: 13, color: Colors.white),
+              ),
+            ),),
+            IconButton(
+              iconSize: 20,
+              icon: const Icon(Icons.notifications, color: Colors.white),
+              onPressed: () {},
+            ),
+          ],
+        ),
       ),
-      body: const Center(child: Text("hello world")),
+      body: const ChatPage(),
     );
   }
 }
