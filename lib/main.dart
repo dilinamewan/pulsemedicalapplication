@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:awesome_notifications/awesome_notifications.dart';
 
+import 'Screens/signing_screen.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   //notification configuration
@@ -27,7 +29,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const MyHomePage(),
+      home: const SignInScreen()
     );
   }
 }
