@@ -1,8 +1,11 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:crypto/crypto.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 
 class DocumentParser {
 
@@ -20,7 +23,7 @@ class DocumentParser {
     return _instance;
   }
 
-  Future<String> parseDocument() async {
+  Future<String?> parseDocument() async {
     try {
       final result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['pdf']);
       if (result == null) {
@@ -28,6 +31,10 @@ class DocumentParser {
       }
 
       final filePath = result.files.single.path!;
+      
+      if(await isAlreadyParsed(File(filePath))){
+        return null;
+      }
 
       final file = await MultipartFile.fromFile(
         filePath,
@@ -77,4 +84,25 @@ class DocumentParser {
       throw Exception('Error parsing document: $e');
     }
   }
+
+  Future<String> getMd5Hash(File file) async {
+    List<int> fileBytes = await file.readAsBytes();
+    return md5.convert(fileBytes).toString();
+  }
+
+  Future<bool> isAlreadyParsed(File file) async {
+    final prefs = await SharedPreferences.getInstance();
+    final String fileMd5 = await getMd5Hash(file);
+
+    List<String> storedMd5s = prefs.getStringList('md5_list') ?? [];
+
+    if (storedMd5s.contains(fileMd5)) {
+      return true;
+    } else {
+      storedMd5s.add(fileMd5);
+      await prefs.setStringList('md5_list', storedMd5s);
+      return false;
+
+  }}
+
 }
