@@ -31,7 +31,7 @@ class DocumentParser {
       }
 
       final filePath = result.files.single.path!;
-      
+
       if(await isAlreadyParsed(File(filePath))){
         return null;
       }
@@ -104,5 +104,16 @@ class DocumentParser {
       return false;
 
   }}
+
+  Future<void> clearData() async {
+    Directory appDocDir = await getApplicationDocumentsDirectory();
+    String filePath = '${appDocDir.path}/data.md';
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('md5_list');
+    File file = File(filePath);
+    if (await file.exists()) {
+      await file.delete();
+    }
+  }
 
 }
