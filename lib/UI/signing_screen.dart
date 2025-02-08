@@ -14,19 +14,53 @@ class SignInScreen extends StatefulWidget {
 }
 
 class _SignInScreenState extends State<SignInScreen> {
-  TextEditingController _passwordTextController = TextEditingController();
-  TextEditingController _emailTextController = TextEditingController();
+  final TextEditingController _emailTextController = TextEditingController();
+  final TextEditingController _passwordTextController = TextEditingController();
+  final GlobalKey<ScaffoldMessengerState> _scaffoldKey = GlobalKey<ScaffoldMessengerState>();
   bool isPasswordType = true;
+
+  void _signIn() async {
+    String email = _emailTextController.text.trim();
+    String password = _passwordTextController.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
+      _showErrorMessage("Please enter both email and password.");
+      return;
+    }
+
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => HomeScreen()),
+      );
+    } catch (error) {
+      _showErrorMessage("Invalid email or password. Please try again.");
+    }
+  }
+
+  void _showErrorMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _scaffoldKey,
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              hexStringToColor("E3F2FD"), // Light blue (medical feel)
-              hexStringToColor("FFFFFF"), // White (clean look)
+              hexStringToColor("E3F2FD"),
+              hexStringToColor("FFFFFF"),
             ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
@@ -39,49 +73,33 @@ class _SignInScreenState extends State<SignInScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: <Widget>[
-                // App Name "Pulse"
                 Text(
                   "Pulse",
                   style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
-                    color: Colors.blue[900], // Darker blue for visibility
+                    color: Colors.blue[900],
                   ),
                 ),
                 SizedBox(height: 20),
-
                 logoWidget("assets/images/logo.jpeg"),
                 SizedBox(height: 30),
-
                 reusableTextField(
-                  "Enter Username", 
-                  Icons.person_outlined, 
-                  false, 
-                  _emailTextController
+                  "Enter Email",
+                  Icons.person_outlined,
+                  false,
+                  _emailTextController,
                 ),
                 SizedBox(height: 30),
-
                 reusableTextField(
-                  "Enter Password", 
-                  Icons.lock_outline, 
-                  isPasswordType, 
-                  _passwordTextController
+                  "Enter Password",
+                  Icons.lock_outline,
+                  isPasswordType,
+                  _passwordTextController,
                 ),
                 SizedBox(height: 30),
-                signInSignUpButton(context, true, () {
-                  FirebaseAuth.instance.signInWithEmailAndPassword(
-                    email: _emailTextController.text,
-                    password: _passwordTextController.text
-                  ).then((value) {
-                    Navigator.pushReplacement(
-                      context, 
-                      MaterialPageRoute(builder: (context) => HomeScreen())
-                    );
-                  }).catchError((error) {
-                    print("Sign in error: $error");
-                  });
-                }),
-                SizedBox(height: 20),  // Added spacing before the sign up option
+                signInSignUpButton(context, true, _signIn),
+                SizedBox(height: 20),
                 signUpOption()
               ],
             ),
@@ -96,16 +114,16 @@ class _SignInScreenState extends State<SignInScreen> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         const Text(
-          "Don't have an account? ",  // Added space after question mark
+          "Don't have an account? ",
           style: TextStyle(
-            color: Colors.black87,    // Changed from white70 to black87
+            color: Colors.black87,
           ),
         ),
         GestureDetector(
           onTap: () {
             Navigator.push(
-              context, 
-              MaterialPageRoute(builder: (context) => SignupScreen())
+              context,
+              MaterialPageRoute(builder: (context) => SignupScreen()),
             );
           },
           child: const Text(

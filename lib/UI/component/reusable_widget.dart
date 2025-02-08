@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-// Logo Widget with Rounded Corners
 Widget logoWidget(String imageName) {
   return ClipRRect(
     borderRadius: BorderRadius.circular(120),
@@ -14,10 +13,13 @@ Widget logoWidget(String imageName) {
   );
 }
 
-// Reusable Text Field Widget
-Widget reusableTextField(String text, IconData icon, bool isPasswordType,
-    TextEditingController controller) {
-  return TextField(
+Widget reusableTextField(
+  String text,
+  IconData icon,
+  bool isPasswordType,
+  TextEditingController controller, 
+) {
+  return TextFormField(
     controller: controller,
     obscureText: isPasswordType,
     enableSuggestions: !isPasswordType,
@@ -26,8 +28,8 @@ Widget reusableTextField(String text, IconData icon, bool isPasswordType,
     style: TextStyle(color: Colors.black87),
     decoration: InputDecoration(
       prefixIcon: Icon(icon, color: Colors.blueAccent),
-      hintText: text,
-      hintStyle: TextStyle(color: Colors.grey[700]),
+      labelText: text,
+      labelStyle: TextStyle(color: Colors.grey[700]),
       filled: true,
       fillColor: Colors.white,
       border: OutlineInputBorder(
@@ -38,13 +40,24 @@ Widget reusableTextField(String text, IconData icon, bool isPasswordType,
         borderRadius: BorderRadius.circular(30.0),
         borderSide: BorderSide(color: Colors.blueAccent, width: 1.5),
       ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(30.0),
+        borderSide: BorderSide(color: Colors.red, width: 1.5),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(30.0),
+        borderSide: BorderSide(color: Colors.red, width: 2.0),
+      ),
     ),
-    keyboardType:
-    isPasswordType ? TextInputType.visiblePassword : TextInputType.text,
+    keyboardType: isPasswordType
+        ? TextInputType.visiblePassword
+        : TextInputType.text,
+   
   );
 }
 
-Container signInSignUpButton(BuildContext context, bool isLogin, Function onTap) {
+Container signInSignUpButton(
+    BuildContext context, bool isLogin, Function onTap) {
   return Container(
     width: MediaQuery.of(context).size.width,
     height: 50,
@@ -72,7 +85,7 @@ Container signInSignUpButton(BuildContext context, bool isLogin, Function onTap)
       child: Text(
         isLogin ? "Sign In" : "Sign Up",
         style: const TextStyle(
-          color: Colors.black87,
+          color: Colors.white,
           fontSize: 16,
           fontWeight: FontWeight.bold,
         ),

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:pulse/ui/component/reusable_widget.dart';
 import '../utils/color_utils.dart';
-import 'home_screen.dart'; 
+import 'home_screen.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({Key? key}) : super(key: key);
@@ -21,8 +22,8 @@ class _SignupScreenState extends State<SignupScreen> {
   final TextEditingController _emergencyContactNumberController = TextEditingController();
   final TextEditingController _dateOfBirthController = TextEditingController();
   String? _gender;
-  
-  bool _isLoading = false; // To show loading indicator
+
+  bool _isLoading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -31,9 +32,9 @@ class _SignupScreenState extends State<SignupScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text(
-          "Sign Up",
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.pop(context),
         ),
       ),
       body: Container(
@@ -48,10 +49,15 @@ class _SignupScreenState extends State<SignupScreen> {
           ),
         ),
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(25.0),
+          padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
+              const SizedBox(height: 80),
+              const Text(
+                "Sign Up",
+                style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 20),
               reusableTextField("Full Name", Icons.person_outlined, false, _fullNameController),
               const SizedBox(height: 20),
@@ -64,14 +70,14 @@ class _SignupScreenState extends State<SignupScreen> {
               reusableTextField("Phone Number", Icons.phone_outlined, false, _phoneNumberController),
               const SizedBox(height: 20),
 
-              // Date of Birth
               TextFormField(
                 controller: _dateOfBirthController,
                 decoration: const InputDecoration(
                   labelText: "Date of Birth (YYYY-MM-DD)",
                   icon: Icon(Icons.calendar_today),
+                  border: OutlineInputBorder(),
                 ),
-                keyboardType: TextInputType.datetime,
+                readOnly: true,
                 onTap: () async {
                   DateTime? pickedDate = await showDatePicker(
                     context: context,
@@ -86,11 +92,11 @@ class _SignupScreenState extends State<SignupScreen> {
               ),
               const SizedBox(height: 20),
 
-              // Gender Dropdown
               DropdownButtonFormField<String>(
                 decoration: const InputDecoration(
                   labelText: "Gender",
                   icon: Icon(Icons.wc),
+                  border: OutlineInputBorder(),
                 ),
                 value: _gender,
                 items: <String>['Male', 'Female', 'Other'].map((String value) {
@@ -112,9 +118,9 @@ class _SignupScreenState extends State<SignupScreen> {
               reusableTextField("Emergency Contact Number", Icons.phone, false, _emergencyContactNumberController),
               const SizedBox(height: 20),
 
-              _isLoading 
-                ? Center(child: CircularProgressIndicator()) // Show loading spinner
-                : signInSignUpButton(context, false, _registerUser),
+              _isLoading
+                  ? Center(child: CircularProgressIndicator())
+                  : signInSignUpButton(context, false, _registerUser),
             ],
           ),
         ),
@@ -125,13 +131,13 @@ class _SignupScreenState extends State<SignupScreen> {
   void _registerUser() async {
     if (_passwordController.text != _confirmPasswordController.text) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Passwords do not match!")),
+        const SnackBar(content: Text("Passwords do not match!")),
       );
       return;
     }
 
     setState(() {
-      _isLoading = true; // Show loading indicator
+      _isLoading = true;
     });
 
     try {
@@ -141,7 +147,17 @@ class _SignupScreenState extends State<SignupScreen> {
       );
 
       if (userCredential.user != null) {
-        print("User created successfully: ${userCredential.user!.email}");
+        await FirebaseFirestore.instance.collection("users").doc(userCredential.user!.uid).set({
+          "fullName": _fullNameController.text.trim(),
+          "email": _emailController.text.trim(),
+          "phoneNumber": _phoneNumberController.text.trim(),
+          "dateOfBirth": _dateOfBirthController.text.trim(),
+          "gender": _gender,
+          "emergencyContactName": _emergencyContactNameController.text.trim(),
+          "emergencyContactNumber": _emergencyContactNumberController.text.trim(),
+          "uid": userCredential.user!.uid,
+        });
+
         if (mounted) {
           Navigator.pushReplacement(
             context,
@@ -150,13 +166,12 @@ class _SignupScreenState extends State<SignupScreen> {
         }
       }
     } catch (e) {
-      print("Error: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Signup failed: $e")),
       );
     } finally {
       setState(() {
-        _isLoading = false; // Hide loading indicator
+        _isLoading = false;
       });
     }
   }
