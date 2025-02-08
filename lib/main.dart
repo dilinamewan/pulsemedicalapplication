@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:awesome_notifications/awesome_notifications.dart';
 
-import 'Screens/signing_screen.dart';
+import 'UI/signing_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
