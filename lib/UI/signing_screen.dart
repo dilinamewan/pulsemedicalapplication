@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../reusable_widgets/reusable_widget.dart';
 import '../utils/color_utils.dart';
+import 'signup_screen.dart';
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});
@@ -50,20 +51,57 @@ class _SignInScreenState extends State<SignInScreen> {
                 SizedBox(height: 30),
 
                 reusableTextField(
-                  "Enter Username", Icons.person_outlined, false, 
+                  "Enter Username", 
+                  Icons.person_outlined, 
+                  false, 
                   _emailTextController
                 ),
                 SizedBox(height: 30),
 
                 reusableTextField(
-                  "Enter Password", Icons.lock_outline, 
-                  isPasswordType, _passwordTextController
+                  "Enter Password", 
+                  Icons.lock_outline, 
+                  isPasswordType, 
+                  _passwordTextController
                 ),
+                SizedBox(height: 30),
+                signInSignUpButton(context, true, () {}),
+                SizedBox(height: 20),  // Added spacing before the sign up option
+                signUpOption()
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Row signUpOption() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Text(
+          "Don't have an account? ",  // Added space after question mark
+          style: TextStyle(
+            color: Colors.black87,    // Changed from white70 to black87
+          ),
+        ),
+        GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context, 
+              MaterialPageRoute(builder: (context) => SignupScreen())
+            );
+          },
+          child: const Text(
+            "Sign Up",
+            style: TextStyle(
+              color: Colors.blueAccent,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
