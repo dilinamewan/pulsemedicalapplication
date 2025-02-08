@@ -2,7 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:awesome_notifications/awesome_notifications.dart';
 
-import 'UI/signing_screen.dart';
+import 'ui/signing_screen.dart';
 
 
 
@@ -10,7 +10,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   //firebase configuration
   await Firebase.initializeApp();
-  
+
   //notification configuration
   await AwesomeNotifications().initialize(null, [
     NotificationChannel(

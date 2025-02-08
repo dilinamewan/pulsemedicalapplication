@@ -1,6 +1,9 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import '../reusable_widgets/reusable_widget.dart';
+import 'package:pulse/ui/component/reusable_widget.dart';
 import '../utils/color_utils.dart';
+import 'home_screen.dart';
 import 'signup_screen.dart';
 
 class SignInScreen extends StatefulWidget {
@@ -65,7 +68,19 @@ class _SignInScreenState extends State<SignInScreen> {
                   _passwordTextController
                 ),
                 SizedBox(height: 30),
-                signInSignUpButton(context, true, () {}),
+                signInSignUpButton(context, true, () {
+                  FirebaseAuth.instance.signInWithEmailAndPassword(
+                    email: _emailTextController.text,
+                    password: _passwordTextController.text
+                  ).then((value) {
+                    Navigator.pushReplacement(
+                      context, 
+                      MaterialPageRoute(builder: (context) => HomeScreen())
+                    );
+                  }).catchError((error) {
+                    print("Sign in error: $error");
+                  });
+                }),
                 SizedBox(height: 20),  // Added spacing before the sign up option
                 signUpOption()
               ],

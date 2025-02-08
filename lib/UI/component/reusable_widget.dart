@@ -56,14 +56,6 @@ Container signInSignUpButton(BuildContext context, bool isLogin, Function onTap)
       onPressed: () {
         onTap();
       },
-      child: Text(
-        isLogin ? "Sign In" : "Sign Up",
-        style: const TextStyle(
-          color: Colors.black87,
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
       style: ButtonStyle(
         backgroundColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.pressed)) {
@@ -75,6 +67,14 @@ Container signInSignUpButton(BuildContext context, bool isLogin, Function onTap)
           RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(30),
           ),
+        ),
+      ),
+      child: Text(
+        isLogin ? "Sign In" : "Sign Up",
+        style: const TextStyle(
+          color: Colors.black87,
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
         ),
       ),
     ),
