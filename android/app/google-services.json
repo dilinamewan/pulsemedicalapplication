@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "376026995168",
+    "project_id": "pulsemedicalapplication-bbbfc",
+    "storage_bucket": "pulsemedicalapplication-bbbfc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:376026995168:android:6b6bb43d693ea66cd0b385",
+        "android_client_info": {
+          "package_name": "com.example.pulsemedicalapplication"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCq-Nfmj_z76ipeoX7VBKa_WZXlRvJFnjE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
