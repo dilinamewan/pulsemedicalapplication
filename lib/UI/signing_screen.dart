@@ -5,6 +5,7 @@ import 'package:pulse/ui/component/reusable_widget.dart';
 import '../utils/color_utils.dart';
 import 'package:pulse/ui/home_screen.dart';
 import 'signup_screen.dart';
+import 'forgot_password_screen.dart';
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});
@@ -97,6 +98,25 @@ class _SignInScreenState extends State<SignInScreen> {
                   isPasswordType,
                   _passwordTextController,
                 ),
+                Align(
+  alignment: Alignment.centerRight,
+  child: GestureDetector(
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => ForgotPasswordScreen()),
+      );
+    },
+    child: Text(
+      "Forgot Password?",
+      style: TextStyle(
+        color: Colors.blue[900],
+        fontWeight: FontWeight.bold,
+      ),
+    ),
+  ),
+),
+SizedBox(height: 20),
                 SizedBox(height: 30),
                 signInSignUpButton(context, true, _signIn),
                 SizedBox(height: 20),
