@@ -3,7 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:pulse/ui/component/reusable_widget.dart';
 import '../utils/color_utils.dart';
-import 'home_screen.dart';
+import 'package:pulse/ui/home_screen.dart';
 import 'signup_screen.dart';
 
 class SignInScreen extends StatefulWidget {

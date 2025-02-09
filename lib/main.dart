@@ -11,6 +11,7 @@ void main() async {
   //firebase configuration
   await Firebase.initializeApp();
 
+
   //notification configuration
   await AwesomeNotifications().initialize(null, [
     NotificationChannel(
