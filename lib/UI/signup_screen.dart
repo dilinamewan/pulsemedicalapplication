@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:pulse/ui/component/reusable_widget.dart';
 import '../utils/color_utils.dart';
 import 'home_screen.dart';
+import 'package:pulse/ui/signing_screen.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({Key? key}) : super(key: key);
@@ -407,7 +408,7 @@ class _SignupScreenState extends State<SignupScreen> {
         if (mounted) {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const HomeScreen()),
+            MaterialPageRoute(builder: (context) => const SignInScreen()),
           );
         }
       }
