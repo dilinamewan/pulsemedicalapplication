@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:pulse/models/Users.dart';
 import 'package:pulse/models/Schedules.dart';
+import 'package:pulse/models/Notes.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // Firebase initialization
   await Firebase.initializeApp();
-
   // Notification configuration
   await AwesomeNotifications().initialize(
     null,
@@ -52,8 +52,9 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   String userId = 'ir4cVfO1ASPuTiHpMammsQLnU8t2'; // User ID to fetch schedules for
   String date = '2024-02-01'; // Date to fetch schedules for
-  late Future<List<User>> usersFuture; // Store the future users list
-  late Future<List<Schedule>> schedulesFuture; // Store the future schedules list
+  late Future<List<User>> usersFuture;
+  late Future<List<Schedule>> schedulesFuture;
+  late Future<List<Note>> notesFuture;
 
   @override
   void initState() {
@@ -68,12 +69,22 @@ class _MyHomePageState extends State<MyHomePage> {
 
     // Fetch users
     usersFuture = UserService().getUsers();
-    // Fetch schedules (FIXED to fetch from users/{userId}/schedules)
+    // Fetch schedules
     schedulesFuture = ScheduleService().getSchedule(userId, date);
+    notesFuture = NoteServices().getNotes('HDsuCopfQCdbDCP4RgrS', userId);
+    // Fetch notes once schedules are loaded
+    // schedulesFuture.then((schedules) {
+    //   if (schedules.isNotEmpty) {
+    //     setState(() {
+    //       notesFuture = NoteServices().getNotes('HDsuCopfQCdbDCP4RgrS');
+    //     });
+    //   }
+    // });
   }
 
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
@@ -81,7 +92,7 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(10.0),
-        child: SingleChildScrollView( // Wrap column in scrollable view to avoid overflow
+        child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -91,7 +102,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               SizedBox(
-                height: 200, // Limit height for the users list
+                height: 200,
                 child: FutureBuilder<List<User>>(
                   future: usersFuture,
                   builder: (context, snapshot) {
@@ -103,7 +114,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       return const Text("No users found.");
                     } else {
                       return ListView.builder(
-                        shrinkWrap: true, // Prevent infinite height issue
+                        shrinkWrap: true,
                         itemCount: snapshot.data!.length,
                         itemBuilder: (context, index) {
                           final user = snapshot.data![index];
@@ -117,14 +128,15 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
               ),
 
-              // Schedules List
               const SizedBox(height: 10),
+
+              // Schedules List
               const Text(
                 "Schedules:",
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               SizedBox(
-                height: 300, // Limit height for the schedules list
+                height: 300,
                 child: FutureBuilder<List<Schedule>>(
                   future: schedulesFuture,
                   builder: (context, snapshot) {
@@ -136,13 +148,51 @@ class _MyHomePageState extends State<MyHomePage> {
                       return const Text("No schedules found.");
                     } else {
                       return ListView.builder(
-                        shrinkWrap: true, // Prevent infinite height issue
+                        shrinkWrap: true,
                         itemCount: snapshot.data!.length,
                         itemBuilder: (context, index) {
                           final schedule = snapshot.data![index];
                           return ListTile(
-                            title: Text(schedule.title),
-                            subtitle: Text('${schedule.date} ${schedule.startTime} - ${schedule.endTime}'),
+                            title: Text('${schedule.title}  - ${schedule.scheduleId}'),
+                            subtitle: Text(
+                                '${schedule.date} ${schedule.startTime} - ${schedule.endTime} - ${schedule.alert} - '
+                                    'Location: ${schedule.location.latitude}'
+                            ),
+                          );
+                        },
+                      );
+                    }
+                  },
+                ),
+              ),
+
+              const SizedBox(height: 10),
+
+              // Notes List
+              const Text(
+                "Notes:",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(
+                height: 200,
+                child: FutureBuilder<List<Note>>(
+                  future: notesFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    } else if (snapshot.hasError) {
+                      return Text("Error: ${snapshot.error}");
+                    } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                      return const Text("No notes found.");
+                    } else {
+                      return ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: snapshot.data!.length,
+                        itemBuilder: (context, index) {
+                          final note = snapshot.data![index];
+                          return ListTile(
+                            title: Text(note.title),
+                            subtitle: Text('${note.content} ${note.noteId}'),
                           );
                         },
                       );

@@ -17,7 +17,7 @@ class Schedule {
   final String date;
   final String startTime;
   final String endTime;
-  final String location;
+  final GeoPoint location;
   final String alert;
 }
 
