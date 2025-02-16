@@ -13,30 +13,46 @@ class ChatPage extends StatefulWidget {
 }
 
 class _ChatPageState extends State<ChatPage> {
-  late String fileContent;
+  String? fileContent;
+  GeminiProvider? _provider;
+  bool _isInitialized = false;
+  String? _error;
 
   @override
   void initState() {
     super.initState();
-    _loadFileContent();
-    _clearHistory();
+    _initialize();
+  }
+
+  Future<void> _initialize() async {
+    try {
+      await _loadFileContent();
+      _initializeProvider();
+      setState(() {
+        _isInitialized = true;
+      });
+    } catch (e) {
+      setState(() {
+        _error = 'Failed to initialize: $e';
+      });
+    }
   }
 
   Future<void> _loadFileContent() async {
     Directory appDocDir = await getApplicationDocumentsDirectory();
     String filePath = '${appDocDir.path}/data.md';
     File markdownFile = File(filePath);
+
     if (await markdownFile.exists()) {
       fileContent = await markdownFile.readAsString();
     } else {
       fileContent = "";
     }
-    _initializeProvider();
   }
 
-  late GeminiProvider _provider;
-
   void _initializeProvider() {
+    if (fileContent == null) return;
+
     _provider = GeminiProvider(
       model: GenerativeModel(
           model: 'gemini-1.5-flash',
@@ -74,18 +90,35 @@ class _ChatPageState extends State<ChatPage> {
       - Identify potential areas requiring further medical investigation
 ''')),
     );
-  }
 
-  void _clearHistory() async {
-    _provider.history = [];
+    _provider?.history = [];
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_error != null) {
+      return Scaffold(
+        body: Center(
+          child: Text(
+            _error!,
+            style: TextStyle(color: Colors.red),
+          ),
+        ),
+      );
+    }
+
+    if (!_isInitialized) {
+      return Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
     return LlmChatView(
       welcomeMessage:
       "Welcome to Pulse Chat, where you can analyze your medical reports",
-      provider: _provider,
+      provider: _provider!,
       style: LlmChatViewStyle(backgroundColor: Colors.black87),
     );
   }
