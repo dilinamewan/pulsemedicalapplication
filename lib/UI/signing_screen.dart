@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:pulse/ui/component/reusable_widget.dart';
 import '../utils/color_utils.dart';
 import 'package:pulse/ui/home_screen.dart';
@@ -19,6 +20,37 @@ class _SignInScreenState extends State<SignInScreen> {
   final TextEditingController _passwordTextController = TextEditingController();
   final GlobalKey<ScaffoldMessengerState> _scaffoldKey = GlobalKey<ScaffoldMessengerState>();
   bool isPasswordType = true;
+  bool _rememberMe = false;
+  late SharedPreferences _prefs;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedCredentials();
+  }
+
+  Future<void> _loadSavedCredentials() async {
+    _prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _rememberMe = _prefs.getBool('rememberMe') ?? false;
+      if (_rememberMe) {
+        _emailTextController.text = _prefs.getString('email') ?? '';
+        _passwordTextController.text = _prefs.getString('password') ?? '';
+      }
+    });
+  }
+
+  Future<void> _saveCredentials() async {
+    if (_rememberMe) {
+      await _prefs.setString('email', _emailTextController.text);
+      await _prefs.setString('password', _passwordTextController.text);
+      await _prefs.setBool('rememberMe', true);
+    } else {
+      await _prefs.remove('email');
+      await _prefs.remove('password');
+      await _prefs.setBool('rememberMe', false);
+    }
+  }
 
   void _signIn() async {
     String email = _emailTextController.text.trim();
@@ -34,6 +66,10 @@ class _SignInScreenState extends State<SignInScreen> {
         email: email,
         password: password,
       );
+      
+      // Save credentials if remember me is checked
+      await _saveCredentials();
+      
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => HomeScreen()),
@@ -98,25 +134,44 @@ class _SignInScreenState extends State<SignInScreen> {
                   isPasswordType,
                   _passwordTextController,
                 ),
-                Align(
-  alignment: Alignment.centerRight,
-  child: GestureDetector(
-    onTap: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => ForgotPasswordScreen()),
-      );
-    },
-    child: Text(
-      "Forgot Password?",
-      style: TextStyle(
-        color: Colors.blue[900],
-        fontWeight: FontWeight.bold,
-      ),
-    ),
-  ),
-),
-SizedBox(height: 20),
+                SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Checkbox(
+                          value: _rememberMe,
+                          activeColor: Colors.blue[900],
+                          onChanged: (bool? value) {
+                            setState(() {
+                              _rememberMe = value ?? false;
+                            });
+                          },
+                        ),
+                        Text(
+                          "Remember Me",
+                          style: TextStyle(color: Colors.black87),
+                        ),
+                      ],
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => ForgotPasswordScreen()),
+                        );
+                      },
+                      child: Text(
+                        "Forgot Password?",
+                        style: TextStyle(
+                          color: Colors.blue[900],
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
                 SizedBox(height: 30),
                 signInSignUpButton(context, true, _signIn),
                 SizedBox(height: 20),
@@ -156,5 +211,12 @@ SizedBox(height: 20),
         ),
       ],
     );
+  }
+
+  @override
+  void dispose() {
+    _emailTextController.dispose();
+    _passwordTextController.dispose();
+    super.dispose();
   }
 }
