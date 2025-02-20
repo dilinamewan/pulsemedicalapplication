@@ -12,19 +12,20 @@ class Note {
   final String content;
 }
 
-class NoteServices {
+class NoteService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  /// Fetch all notes for a specific schedule
   Future<List<Note>> getNotes(String scheduleId, String userId) async {
     List<Note> notes = [];
 
     try {
       QuerySnapshot querySnapshot = await _firestore
-          .collection('users') // Access users collection
-          .doc(userId) // Select the user
-          .collection('schedules') // Access schedules subcollection
-          .doc(scheduleId) // Select the specific schedule
-          .collection('notes') // Get notes from this schedule
+          .collection('users')
+          .doc(userId)
+          .collection('schedules')
+          .doc(scheduleId)
+          .collection('notes')
           .get();
 
       notes = querySnapshot.docs.map((doc) {
@@ -38,9 +39,69 @@ class NoteServices {
       }).toList();
     } catch (e) {
       print('Error fetching notes: $e');
-      rethrow; // Allows the error to be handled by the calling function
     }
 
     return notes;
+  }
+
+  /// Add a new note
+  Future<void> addNote(String scheduleId, String userId, String title, String content) async {
+    try {
+      await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('schedules')
+          .doc(scheduleId)
+          .collection('notes')
+          .add({
+        'title': title,
+        'content': content,
+        'createdAt': FieldValue.serverTimestamp(), // Track creation time
+      });
+
+      print('Note added successfully');
+    } catch (e) {
+      print('Error adding note: $e');
+    }
+  }
+
+  /// Update an existing note
+  Future<void> updateNote(String scheduleId, String userId, String noteId, String newTitle, String newContent) async {
+    try {
+      await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('schedules')
+          .doc(scheduleId)
+          .collection('notes')
+          .doc(noteId)
+          .update({
+        'title': newTitle,
+        'content': newContent,
+        'updatedAt': FieldValue.serverTimestamp(), // Track update time
+      });
+
+      print('Note updated successfully');
+    } catch (e) {
+      print('Error updating note: $e');
+    }
+  }
+
+  /// Delete a note
+  Future<void> deleteNote(String scheduleId, String userId, String noteId) async {
+    try {
+      await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('schedules')
+          .doc(scheduleId)
+          .collection('notes')
+          .doc(noteId)
+          .delete();
+
+      print('Note deleted successfully');
+    } catch (e) {
+      print('Error deleting note: $e');
+    }
   }
 }
