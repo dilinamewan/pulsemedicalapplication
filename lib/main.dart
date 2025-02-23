@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import './components/ScheduleScreen.dart';
-import './components/NoteScreen.dart';
-import './components/DocumentScreen.dart';
-import './components/CalendarScreen.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized(); // Add this line
@@ -52,23 +49,23 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(title: Text("Medical Calendar App")),
       body: Column(
         children: [
-          Expanded(
-            child: CalendarScreen(),
-          ),
           // Expanded(
-          //   flex: 2,
-          //   child: ScheduleScreen(userId: userId, onScheduleSelected: _onScheduleSelected),
+          //   // child: CalendarScreen(),
           // ),
-          // if (selectedScheduleId != null)
-          //   Expanded(
-          //     //flex: 2,
-          //     child: NoteScreen(userId: userId, scheduleId: selectedScheduleId!, onNoteSelected: _onNoteSelected),
-          //   ),
-          // if (selectedNoteId != null)
-          //   Expanded(
-          //     //flex: 3,
-          //     child: DocumentScreen(userId: userId, scheduleId: selectedScheduleId!, noteId: selectedNoteId!),
-          //   ),
+          Expanded(
+            flex: 2,
+            child: ScheduleScreen(userId: userId, onScheduleSelected: _onScheduleSelected),
+          ),
+          if (selectedScheduleId != null)
+            Expanded(
+              //flex: 2,
+              child: NoteScreen(userId: userId, scheduleId: selectedScheduleId!, onNoteSelected: _onNoteSelected),
+            ),
+          if (selectedNoteId != null)
+            Expanded(
+              //flex: 3,
+              child: DocumentScreen(userId: userId, scheduleId: selectedScheduleId!, noteId: selectedNoteId!),
+            ),
         ],
       ),
     );
