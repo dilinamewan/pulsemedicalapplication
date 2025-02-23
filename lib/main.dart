@@ -6,7 +6,7 @@ import 'package:firebase_core/firebase_core.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Notification configuration
+  await Firebase.initializeApp();
   await AwesomeNotifications().initialize(null, [
     NotificationChannel(
       channelKey: 'basic_channel',

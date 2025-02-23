@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-
-
 class AddHMUI extends StatefulWidget {
   const AddHMUI({Key? key}) : super(key: key);
 
@@ -15,9 +13,13 @@ class _AddHMUIState extends State<AddHMUI> {
   final TextEditingController sugarLevelController = TextEditingController();
   final TextEditingController heartRateController = TextEditingController();
 
+  // Global key for ScaffoldMessenger
+  final GlobalKey<ScaffoldMessengerState> _scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      scaffoldMessengerKey: _scaffoldMessengerKey, // Use the key here
       home: Scaffold(
         appBar: AppBar(
           title: Text('Add Health Metrics'),
@@ -71,17 +73,28 @@ class _AddHMUIState extends State<AddHMUI> {
               // Save Button
               ElevatedButton(
                 onPressed: () async {
-                  // Save logic to Firestore
+                  String userId = "yB57HeFJmMbaY8WLyxfg"; // Save logic to Firestore
                   try {
-                    await FirebaseFirestore.instance.collection('health_metrics').add({
+                    await FirebaseFirestore.instance
+                        .collection('users') // The existing 'users' collection
+                        .doc(userId) // The specific user document
+                        .collection('health_metrics') // The health metrics subcollection
+                        .add({
                       'blood_pressure': bloodPressureController.text,
                       'sugar_level': sugarLevelController.text,
                       'heart_rate': heartRateController.text,
-                      'timestamp': FieldValue.serverTimestamp(), // Optional: timestamp of when data was added
+                      'timestamp': FieldValue.serverTimestamp(), // Automatically add timestamp
                     });
+
                     print('Metrics saved successfully');
+                    _scaffoldMessengerKey.currentState?.showSnackBar(
+                      SnackBar(content: Text('Metrics saved successfully!')),
+                    );
                   } catch (e) {
                     print('Error saving metrics: $e');
+                    _scaffoldMessengerKey.currentState?.showSnackBar(
+                      SnackBar(content: Text('Error saving metrics: $e')),
+                    );
                   }
                 },
                 child: Text(
@@ -95,8 +108,6 @@ class _AddHMUIState extends State<AddHMUI> {
                     borderRadius: BorderRadius.circular(30),
                   ),
                 ),
-
-
               ),
             ],
           ),
