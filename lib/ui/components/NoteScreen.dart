@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../models/Notes.dart';
+import 'package:pulse/models/Notes.dart';
 
 class NoteScreen extends StatefulWidget {
   final String userId;

@@ -1,7 +1,7 @@
 import 'dart:io';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import '../models/Documents.dart';
+import 'package:pulse/models/Documents.dart';
+import 'package:file_picker/file_picker.dart';
 
 class DocumentScreen extends StatefulWidget {
   final String userId;

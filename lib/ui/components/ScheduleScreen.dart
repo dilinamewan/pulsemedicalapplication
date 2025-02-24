@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../models/Schedules.dart';
+import 'package:pulse/models/Schedules.dart';
 
 class ScheduleScreen extends StatefulWidget {
   final String userId;
