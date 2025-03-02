@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:pulse/ui/components/NoteScreen.dart';
 import 'package:pulse/ui/components/ScheduleScreen.dart';
 import 'package:pulse/ui/components/DocumentScreen.dart';
@@ -14,6 +15,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final String userId = "ir4cVfO1ASPuTiHpMammsQLnU8t2"; // Replace with actual user ID
   String? selectedScheduleId;
   String? selectedNoteId;
+  String selectedDate = DateFormat('yyyy-MM-dd').format(DateTime.now()); // Default to today
 
   void _onScheduleSelected(String scheduleId) {
     setState(() {
@@ -32,27 +34,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text("Medical Calendar App")),
-      body: Column(
-        children: [
-          // Expanded(
-          //   // child: CalendarScreen(),
-          // ),
-          Expanded(
-            flex: 2,
-            child: ScheduleScreen(userId: userId, onScheduleSelected: _onScheduleSelected),
-          ),
-          if (selectedScheduleId != null)
-            Expanded(
-              //flex: 2,
-              child: NoteScreen(userId: userId, scheduleId: selectedScheduleId!, onNoteSelected: _onNoteSelected),
-            ),
-          if (selectedNoteId != null)
-            Expanded(
-              //flex: 3,
-              child: DocumentScreen(userId: userId, scheduleId: selectedScheduleId!, noteId: selectedNoteId!),
-            ),
-        ],
-      ),
+      body: 
+      CalendarScreen(),
     );
   }
 }
