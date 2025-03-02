@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import 'package:pulse/ui/components/NoteScreen.dart';
-import 'package:pulse/ui/components/ScheduleScreen.dart';
-import 'package:pulse/ui/components/DocumentScreen.dart';
+import 'package:pulse/ui/components/AppBarWidget.dart';
 import 'package:pulse/ui/components/CalendarScreen.dart';
-
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -12,30 +8,44 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final String userId = "ir4cVfO1ASPuTiHpMammsQLnU8t2"; // Replace with actual user ID
-  String? selectedScheduleId;
-  String? selectedNoteId;
-  String selectedDate = DateFormat('yyyy-MM-dd').format(DateTime.now()); // Default to today
-
-  void _onScheduleSelected(String scheduleId) {
-    setState(() {
-      selectedScheduleId = scheduleId;
-      selectedNoteId = null;
-    });
-  }
-
-  void _onNoteSelected(String noteId) {
-    setState(() {
-      selectedNoteId = noteId;
-    });
-  }
+  int _selectedIndex = 0;
+  final GlobalKey<CalendarScreenState> _calendarKey = GlobalKey<CalendarScreenState>();
 
   @override
   Widget build(BuildContext context) {
+    final List<Widget> _screens = [
+      Center(child: Text("Home Screen")),
+      CalendarScreen(key: _calendarKey), 
+      Center(child: Text("Profile Screen")),
+    ];
+
     return Scaffold(
-      appBar: AppBar(title: Text("Medical Calendar App")),
-      body: 
-      CalendarScreen(),
+      appBar: AppBarWidget(),
+      body: _screens[_selectedIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: (index) {
+          setState(() {
+            _selectedIndex = index;
+          });
+        },
+        iconSize: 17,
+        selectedFontSize: 11,
+        unselectedFontSize: 10,
+        items: [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: 'Calendar'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+        ],
+      ),
+      floatingActionButton: _selectedIndex == 1
+          ? FloatingActionButton(
+              onPressed: () {
+                _calendarKey.currentState?.fabClick(); 
+              },
+              child: Icon(Icons.add),
+            )
+          : null,
     );
   }
 }
