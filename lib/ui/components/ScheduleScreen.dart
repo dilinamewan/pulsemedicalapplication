@@ -4,9 +4,13 @@ import 'package:pulse/models/Schedules.dart';
 class ScheduleScreen extends StatefulWidget {
   final String userId;
   final Function(String) onScheduleSelected;
-  final String date = "2024-02-01";
+  final String date;
 
-  const ScheduleScreen({Key? key, required this.userId, required this.onScheduleSelected}) : super(key: key);
+  const ScheduleScreen(
+      {super.key,
+      required this.userId,
+      required this.onScheduleSelected,
+      required this.date});
 
   @override
   _ScheduleScreenState createState() => _ScheduleScreenState();
@@ -15,36 +19,84 @@ class ScheduleScreen extends StatefulWidget {
 class _ScheduleScreenState extends State<ScheduleScreen> {
   final ScheduleService _scheduleService = ScheduleService();
   List<Schedule> _schedules = [];
-
+  bool _isLoading = false;
+  
   @override
   void initState() {
     super.initState();
     _fetchSchedules();
   }
-
+  
+  @override
+  void didUpdateWidget(covariant ScheduleScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.date != widget.date) {
+      _fetchSchedules();
+    }
+  }
+  
   void _fetchSchedules() async {
-    List<Schedule> schedules = await _scheduleService.getSchedule(widget.userId, widget.date);
+    setState(() {
+      _isLoading = true;
+    });
+    List<Schedule> schedules =
+        await _scheduleService.getSchedule(widget.userId, widget.date);
+    
     setState(() {
       _schedules = schedules;
+      _isLoading = false;
     });
   }
-
+  
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      itemCount: _schedules.length,
-      itemBuilder: (context, index) {
-        return ListTile(
-          title: Text(_schedules[index].title),
-          titleTextStyle : TextStyle(
-            color: Color(int.parse(_schedules[index].color)),
-            fontSize: 20.0,
-            fontWeight: FontWeight.bold,
-          ),
-
-          onTap: () => widget.onScheduleSelected(_schedules[index].scheduleId),
-        );
-      },
-    );
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    
+    return _schedules.isEmpty
+        ? const Center(child: Text("No schedules found"))
+        : ListView.builder(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            itemCount: _schedules.length,
+            itemBuilder: (context, index) {
+              final schedule = _schedules[index];
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                child: InkWell(
+                  onTap: () => widget.onScheduleSelected(schedule.scheduleId),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          color: Color(int.parse(schedule.color)),
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(12),
+                            bottomLeft: Radius.circular(12),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Appointment Reminder: "${schedule.title}"',
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
   }
 }
