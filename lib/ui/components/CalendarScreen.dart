@@ -1,7 +1,8 @@
+import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
-import 'package:intl/intl.dart';
-import 'package:pulse/ui/components/ScheduleScreen.dart';
+import 'package:pulse/ui/components/ScheduleCalenderScreen.dart';
+import 'package:pulse/ui/components/ScheduleFormScreen.dart';
 
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({super.key});
@@ -17,7 +18,7 @@ class CalendarScreenState extends State<CalendarScreen> {
   void _onScheduleSelected(String scheduleId) {}
 
   void fabClick() {
-    print(_selectedDay);
+    Navigator.push(context, MaterialPageRoute(builder: (context) => ScheduleFormScreen(userId: userId,scheduleDate: _selectedDay)));
   }
 
   @override
@@ -64,7 +65,7 @@ class CalendarScreenState extends State<CalendarScreen> {
         ),
         Flexible(
           fit: FlexFit.loose,
-          child: ScheduleScreen(
+          child: ScheduleCalenderScreen(
             userId: userId,
             onScheduleSelected: _onScheduleSelected,
             date: DateFormat('yyyy-MM-dd').format(_selectedDay),

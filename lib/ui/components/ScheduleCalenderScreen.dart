@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:pulse/models/Schedules.dart';
 
-class ScheduleScreen extends StatefulWidget {
+class ScheduleCalenderScreen extends StatefulWidget {
   final String userId;
   final Function(String) onScheduleSelected;
   final String date;
 
-  const ScheduleScreen(
+  const ScheduleCalenderScreen(
       {super.key,
       required this.userId,
       required this.onScheduleSelected,
       required this.date});
 
   @override
-  _ScheduleScreenState createState() => _ScheduleScreenState();
+  _ScheduleCalenderScreenState createState() => _ScheduleCalenderScreenState();
 }
 
-class _ScheduleScreenState extends State<ScheduleScreen> {
+class _ScheduleCalenderScreenState extends State<ScheduleCalenderScreen> {
   final ScheduleService _scheduleService = ScheduleService();
   List<Schedule> _schedules = [];
   bool _isLoading = false;
@@ -28,7 +28,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   }
   
   @override
-  void didUpdateWidget(covariant ScheduleScreen oldWidget) {
+  void didUpdateWidget(covariant ScheduleCalenderScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.date != widget.date) {
       _fetchSchedules();
