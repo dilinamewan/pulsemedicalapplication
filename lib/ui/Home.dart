@@ -23,6 +23,7 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBarWidget(),
       body: _screens[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
+        backgroundColor: Colors.black,
         currentIndex: _selectedIndex,
         onTap: (index) {
           setState(() {
@@ -32,6 +33,8 @@ class _HomeScreenState extends State<HomeScreen> {
         iconSize: 17,
         selectedFontSize: 11,
         unselectedFontSize: 10,
+         selectedItemColor: Colors.white, // White selected item
+        unselectedItemColor: Colors.grey[500], // Gray unselected items
         items: [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: 'Calendar'),
@@ -43,7 +46,11 @@ class _HomeScreenState extends State<HomeScreen> {
               onPressed: () {
                 _calendarKey.currentState?.fabClick(); 
               },
-              child: Icon(Icons.add),
+              backgroundColor: Colors.grey[800],
+              shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12), // Rounded corners
+      ),
+              child: Icon(Icons.add, color: Colors.white),
             )
           : null,
     );

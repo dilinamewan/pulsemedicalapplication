@@ -55,7 +55,7 @@ class _ScheduleCalenderScreenState extends State<ScheduleCalenderScreen> {
     }
     
     return _schedules.isEmpty
-        ? const Center(child: Text("No schedules found"))
+        ? const Center(child: Text("No schedules found",style: TextStyle(color: Colors.white),))
         : ListView.builder(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             itemCount: _schedules.length,
@@ -63,6 +63,10 @@ class _ScheduleCalenderScreenState extends State<ScheduleCalenderScreen> {
               final schedule = _schedules[index];
               return Container(
                 margin: const EdgeInsets.only(bottom: 12),
+                 decoration: BoxDecoration(
+                  color: Colors.grey[900], // Dark gray background for list items
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 child: InkWell(
                   onTap: () => widget.onScheduleSelected(schedule.scheduleId),
                   borderRadius: BorderRadius.circular(12),
@@ -87,6 +91,7 @@ class _ScheduleCalenderScreenState extends State<ScheduleCalenderScreen> {
                             children: [
                               Text(
                                 'Appointment Reminder: "${schedule.title}"',
+                                style: TextStyle(color: Colors.white),
                               ),
                             ],
                           ),
@@ -100,3 +105,4 @@ class _ScheduleCalenderScreenState extends State<ScheduleCalenderScreen> {
           );
   }
 }
+
