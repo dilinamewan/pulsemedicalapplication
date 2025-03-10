@@ -1,8 +1,8 @@
 // First, create a new screen for password reset
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:pulse/ui/component/reusable_widget.dart';
-import '../utils/color_utils.dart';
+import 'package:pulse/ui/components/reusable_widget.dart';
+import 'package:pulse/utils/color_utils.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});

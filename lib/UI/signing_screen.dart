@@ -1,11 +1,10 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:pulse/ui/component/reusable_widget.dart';
-import '../utils/color_utils.dart';
-import 'package:pulse/ui/home_screen.dart';
-import 'signup_screen.dart';
-import 'forgot_password_screen.dart';
+import 'package:pulse/ui/components/reusable_widget.dart';
+import 'package:pulse/utils/color_utils.dart';
+import 'package:pulse/ui/Home.dart';
+import 'package:pulse/ui/signup_screen.dart';
+import 'package:pulse/ui/forgot_password_screen.dart';
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});
