@@ -2,7 +2,7 @@ import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:pulse/ui/components/ScheduleCalenderScreen.dart';
-import 'package:pulse/ui/components/ScheduleFormScreen.dart';
+import 'package:pulse/ui/ScheduleFormScreen.dart';
 
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({super.key});

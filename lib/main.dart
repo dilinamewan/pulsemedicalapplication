@@ -1,5 +1,4 @@
 import 'ui/signing_screen.dart';
-import 'package:pulse/ui/chatUi.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -29,7 +28,7 @@ Future main() async {
 
   ]);
   
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'documentscreen.dart'; // Import the DocumentScreen
-import '../../models/Notes.dart';
+import 'package:pulse/ui/components/documentscreen.dart'; // Import the DocumentScreen
+import 'package:pulse/models/Notes.dart';
 
 class NoteScreen extends StatefulWidget {
   final String userId;
