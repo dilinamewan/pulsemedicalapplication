@@ -1,28 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:pulse/ui/components/AppBarWidget.dart';
 
-void main() {
-  runApp(const MyApp());
-}
+class ScheduleFormScreen extends StatefulWidget {
+  final String userId;
+  final DateTime scheduleDate;
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const ScheduleFormScreen({
+    super.key,
+    required this.userId,
+    required this.scheduleDate,
+  });
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: ScheduleScreen(),
-    );
-  }
+  State<ScheduleFormScreen> createState() => _ScheduleFormScreenState();
 }
 
-class ScheduleScreen extends StatefulWidget {
-  @override
-  _ScheduleScreenState createState() => _ScheduleScreenState();
-}
-
-class _ScheduleScreenState extends State<ScheduleScreen> {
+class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
   bool isAllDay = false;
   TimeOfDay startTime = TimeOfDay(hour: 13, minute: 0);
   TimeOfDay endTime = TimeOfDay(hour: 13, minute: 0);
@@ -30,6 +23,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBarWidget(),
       backgroundColor: Colors.black,
       body: Padding(
         padding: const EdgeInsets.all(20.0),
