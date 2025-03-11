@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:pulse/ui/components/AppBarWidget.dart';
 
 class ScheduleFormScreen extends StatefulWidget {
-  final String userId;
+
   final DateTime scheduleDate;
+  final String scheduleId;
 
   const ScheduleFormScreen({
     super.key,
-    required this.userId,
     required this.scheduleDate,
+    required this.scheduleId,
   });
 
   @override
@@ -17,8 +18,8 @@ class ScheduleFormScreen extends StatefulWidget {
 
 class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
   bool isAllDay = false;
-  TimeOfDay startTime = TimeOfDay(hour: 13, minute: 0);
-  TimeOfDay endTime = TimeOfDay(hour: 13, minute: 0);
+  TimeOfDay startTime = TimeOfDay(hour: 0, minute: 0);
+  TimeOfDay endTime = TimeOfDay(hour: 0, minute: 0);
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +34,7 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
             const SizedBox(height: 50),
             const Center(
               child: Text(
-                'Add Schedule - 2nd January 2024',
+                scheduleDate,
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 18,

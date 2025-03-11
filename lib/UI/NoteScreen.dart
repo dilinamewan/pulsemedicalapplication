@@ -30,7 +30,7 @@ final NoteService _noteService = NoteService();
   }
 
   void _fetchNotes() async {
-    List<Note> notes = await _noteService.getNotes(widget.scheduleId, widget.userId);
+    List<Note> notes = await _noteService.getNotes(widget.scheduleId);
     setState(() {
       _notes = notes;
     });

@@ -1,14 +1,17 @@
+
+
 import 'package:flutter/material.dart';
+import 'package:pulse/Globals.dart';
 import 'package:pulse/models/Schedules.dart';
 
 class ScheduleCalenderScreen extends StatefulWidget {
-  final String userId;
+
   final Function(String) onScheduleSelected;
   final String date;
 
   const ScheduleCalenderScreen(
       {super.key,
-      required this.userId,
+
       required this.onScheduleSelected,
       required this.date});
 
@@ -34,14 +37,14 @@ class _ScheduleCalenderScreenState extends State<ScheduleCalenderScreen> {
       _fetchSchedules();
     }
   }
-  
+
   void _fetchSchedules() async {
     setState(() {
       _isLoading = true;
     });
     List<Schedule> schedules =
-        await _scheduleService.getSchedule(widget.userId, widget.date);
-    
+        await _scheduleService.getSchedule(widget.date);
+
     setState(() {
       _schedules = schedules;
       _isLoading = false;

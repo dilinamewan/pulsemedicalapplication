@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:path/path.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:pulse/Globals.dart';
 
 class Document {
   Document({
@@ -20,13 +21,13 @@ class DocumentService {
   final FirebaseStorage _storage = FirebaseStorage.instance;
 
   /// Fetch all documents for a specific note
-  Future<List<Document>> getDocuments(String userId, String scheduleId, String noteId) async {
+  Future<List<Document>> getDocuments(String scheduleId, String noteId) async {
     List<Document> documents = [];
 
     try {
       QuerySnapshot<Map<String, dynamic>> querySnapshot = await _firestore
           .collection('users')
-          .doc(userId)
+          .doc(globalUserId)
           .collection('schedules')
           .doc(scheduleId)
           .collection('notes')

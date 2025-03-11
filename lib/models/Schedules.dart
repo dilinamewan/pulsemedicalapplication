@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:pulse/globals.dart';
 
 class Schedule {
   Schedule({
@@ -27,13 +28,13 @@ class ScheduleService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   /// Fetch schedules for a specific user and date
-  Future<List<Schedule>> getSchedule(String userId, String date) async {
+  Future<List<Schedule>> getSchedule(String date) async {
     List<Schedule> schedules = [];
 
     try {
       QuerySnapshot querySnapshot = await _firestore
           .collection('users')
-          .doc(userId)
+          .doc(globalUserId)
           .collection('schedules')
           .where('date', isEqualTo: date)
           .get();

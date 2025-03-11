@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:pulse/ui/components/ScheduleCalenderScreen.dart';
 import 'package:pulse/ui/ScheduleFormScreen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:pulse/Globals.dart';
 
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({super.key});
@@ -13,15 +15,26 @@ class CalendarScreen extends StatefulWidget {
 
 class CalendarScreenState extends State<CalendarScreen> {
   DateTime _selectedDay = DateTime.now();
-  final String userId = "ir4cVfO1ASPuTiHpMammsQLnU8t2";
 
-  void _onScheduleSelected(String scheduleId) {}
+
+
+  void _onScheduleSelected(String scheduleId) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ScheduleFormScreen(
+          scheduleId: scheduleId,
+          scheduleDate: _selectedDay,
+        ),
+      ),
+    );
+  }
 
   void fabClick() {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ScheduleFormScreen(userId: userId, scheduleDate: _selectedDay),
+        builder: (context) => ScheduleFormScreen(scheduleDate: _selectedDay),
       ),
     );
   }
@@ -81,7 +94,7 @@ class CalendarScreenState extends State<CalendarScreen> {
           Flexible(
             fit: FlexFit.loose,
             child: ScheduleCalenderScreen(
-              userId: userId,
+
               onScheduleSelected: _onScheduleSelected,
               date: DateFormat('yyyy-MM-dd').format(_selectedDay),
             ),

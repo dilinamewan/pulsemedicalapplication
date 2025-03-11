@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:pulse/globals.dart';
 
 class Note {
   Note({
@@ -16,13 +17,13 @@ class NoteService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   /// Fetch all notes for a specific schedule
-  Future<List<Note>> getNotes(String scheduleId, String userId) async {
+  Future<List<Note>> getNotes(String scheduleId) async {
     List<Note> notes = [];
 
     try {
       QuerySnapshot querySnapshot = await _firestore
           .collection('users')
-          .doc(userId)
+          .doc(globalUserId)
           .collection('schedules')
           .doc(scheduleId)
           .collection('notes')
