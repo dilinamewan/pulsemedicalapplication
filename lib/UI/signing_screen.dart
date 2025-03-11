@@ -1,10 +1,12 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:pulse/ui/components/reusable_widget.dart';
-import '../utils/color_utils.dart';
+import 'package:pulse/utils/color_utils.dart';
 import 'package:pulse/ui/home.dart';
-import 'signup_screen.dart';
-import 'forgot_password_screen.dart';
+import 'package:pulse/ui/signup_screen.dart';
+import 'package:pulse/ui/forgot_password_screen.dart';
+import 'package:pulse/globals.dart'; // Import global variable
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});
@@ -16,9 +18,30 @@ class SignInScreen extends StatefulWidget {
 class _SignInScreenState extends State<SignInScreen> {
   final TextEditingController _emailTextController = TextEditingController();
   final TextEditingController _passwordTextController = TextEditingController();
-  final GlobalKey<ScaffoldMessengerState> _scaffoldKey = GlobalKey<ScaffoldMessengerState>();
+  final GlobalKey<ScaffoldMessengerState> _scaffoldKey =
+  GlobalKey<ScaffoldMessengerState>();
   bool isPasswordType = true;
 
+  /// **Save User ID to SharedPreferences & Global Variable**
+  Future<void> saveUserId() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_id', user.uid);
+
+      globalUserId = user.uid; // Save User ID in global variable
+      print("User ID saved: $globalUserId");
+    }
+  }
+
+  /// **Retrieve User ID from SharedPreferences**
+  Future<String?> getUserId() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    globalUserId = prefs.getString('user_id');
+    return globalUserId;
+  }
+
+  /// **Sign In Function**
   void _signIn() async {
     String email = _emailTextController.text.trim();
     String password = _passwordTextController.text.trim();
@@ -33,6 +56,11 @@ class _SignInScreenState extends State<SignInScreen> {
         email: email,
         password: password,
       );
+
+      /// **Save User ID after successful login**
+      await saveUserId();
+
+      /// **Navigate to Home Page**
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => HomeScreen()),
@@ -42,6 +70,7 @@ class _SignInScreenState extends State<SignInScreen> {
     }
   }
 
+
   void _showErrorMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -49,6 +78,12 @@ class _SignInScreenState extends State<SignInScreen> {
         backgroundColor: Colors.red,
       ),
     );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    getUserId();
   }
 
   @override
@@ -98,25 +133,25 @@ class _SignInScreenState extends State<SignInScreen> {
                   _passwordTextController,
                 ),
                 Align(
-  alignment: Alignment.centerRight,
-  child: GestureDetector(
-    onTap: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => ForgotPasswordScreen()),
-      );
-    },
-    child: Text(
-      "Forgot Password?",
-      style: TextStyle(
-        color: Colors.blue[900],
-        fontWeight: FontWeight.bold,
-      ),
-    ),
-  ),
-),
-SizedBox(height: 20),
-                SizedBox(height: 30),
+                  alignment: Alignment.centerRight,
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => ForgotPasswordScreen()),
+                      );
+                    },
+                    child: Text(
+                      "Forgot Password?",
+                      style: TextStyle(
+                        color: Colors.blue[900],
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 20),
                 signInSignUpButton(context, true, _signIn),
                 SizedBox(height: 20),
                 signUpOption()
@@ -128,6 +163,7 @@ SizedBox(height: 20),
     );
   }
 
+  /// **Sign-Up Option UI**
   Row signUpOption() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
