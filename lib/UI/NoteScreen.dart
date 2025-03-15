@@ -1,17 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:pulse/ui/components/documentscreen.dart'; // Import the DocumentScreen
+import 'package:pulse/ui/components/documentscreen.dart';
 import 'package:pulse/models/Notes.dart';
 
 class NoteScreen extends StatefulWidget {
-  final String userId;
   final String scheduleId;
-  final Function(String) onNoteSelected;
 
   const NoteScreen({
     Key? key,
-    required this.userId,
     required this.scheduleId,
-    required this.onNoteSelected,
   }) : super(key: key);
 
   @override
@@ -19,21 +15,28 @@ class NoteScreen extends StatefulWidget {
 }
 
 class _NoteScreenState extends State<NoteScreen> {
-  List<String> _uploadedFiles = []; // Track uploaded files
-final NoteService _noteService = NoteService();
+  final NoteService _noteService = NoteService();
   List<Note> _notes = [];
+  TextEditingController _titleController = TextEditingController();
+  TextEditingController _contentController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _fetchNotes();
+    if (widget.scheduleId.isNotEmpty) {
+      _fetchNotes();
+    }
   }
 
   void _fetchNotes() async {
     List<Note> notes = await _noteService.getNotes(widget.scheduleId);
-    setState(() {
-      _notes = notes;
-    });
+    if (notes.isNotEmpty) {
+      setState(() {
+        _notes = notes;
+        _titleController.text = notes.first.title;
+        _contentController.text = notes.first.content;
+      });
+    }
   }
 
   @override
@@ -44,11 +47,10 @@ final NoteService _noteService = NoteService();
         padding: const EdgeInsets.all(40.0),
         child: Column(
           children: [
-            // Title: Add Note
             Align(
               alignment: Alignment.center,
               child: Text(
-                "Add Note",
+                "Edit Note",
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 14,
@@ -57,8 +59,6 @@ final NoteService _noteService = NoteService();
               ),
             ),
             SizedBox(height: 20),
-
-            // Note Input Box
             Expanded(
               child: Container(
                 padding: EdgeInsets.all(12),
@@ -69,6 +69,7 @@ final NoteService _noteService = NoteService();
                 child: Column(
                   children: [
                     TextField(
+                      controller: _titleController,
                       style: TextStyle(color: Colors.white),
                       decoration: InputDecoration(
                         hintText: "Title",
@@ -81,6 +82,7 @@ final NoteService _noteService = NoteService();
                     SizedBox(height: 10),
                     Expanded(
                       child: TextField(
+                        controller: _contentController,
                         style: TextStyle(color: Colors.white),
                         maxLines: null,
                         decoration: InputDecoration(
@@ -95,12 +97,10 @@ final NoteService _noteService = NoteService();
               ),
             ),
             SizedBox(height: 40),
-
-            // Title: Add Attachments
             Align(
               alignment: Alignment.center,
               child: Text(
-                "Add Attachments",
+                "Attachments",
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 14,
@@ -109,19 +109,15 @@ final NoteService _noteService = NoteService();
               ),
             ),
             SizedBox(height: 10),
-
-            // Embed DocumentScreen with reduced height
             SizedBox(
-              height: 150, // Reduced height
+              height: 150,
               child: DocumentScreen(
-                key: ValueKey(_uploadedFiles), // Force rebuild when state changes
-                userId: widget.userId,
+                key: ValueKey(widget.scheduleId),
                 scheduleId: widget.scheduleId,
-                noteId: "noteId", // Replace with the actual noteId if available
+                noteId: _notes.isNotEmpty ? _notes.first.noteId : "",
               ),
             ),
-
-            SizedBox(height: 20), // Space for Bottom Nav Bar
+            SizedBox(height: 20),
           ],
         ),
       ),
