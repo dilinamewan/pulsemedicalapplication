@@ -61,6 +61,42 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
 
         orElse: () => throw Exception('Schedule not found'),
       );
+      TimeOfDay parseTimeOfDay(String timeString) {
+        // Convert "12:01:PM" format to a standard "12:01 PM" format
+        timeString = timeString.replaceAll(":", " ").replaceFirst(" ", ":");
+
+        final format = RegExp(r'(\d+):(\d+)\s?(AM|PM)');
+
+        final match = format.firstMatch(timeString);
+        if (match != null) {
+          int hour = int.parse(match.group(1)!);
+          int minute = int.parse(match.group(2)!);
+          String period = match.group(3)!;
+
+          // Convert 12-hour format to 24-hour format
+          if (period == "PM" && hour != 12) {
+            hour += 12;
+          } else if (period == "AM" && hour == 12) {
+            hour = 0;
+          }
+
+          return TimeOfDay(hour: hour, minute: minute);
+        } else {
+          throw FormatException("Invalid time format");
+        }
+      }
+
+// Parsing startTime and endTime
+      try {
+        startTime = parseTimeOfDay(schedule.startTime);
+        endTime = parseTimeOfDay(schedule.endTime);
+
+        // Determine if it's an all-day event (00:00 - 23:59)
+        isAllDay = (startTime.hour == 0 && startTime.minute == 0 &&
+            endTime.hour == 23 && endTime.minute == 59);
+      } catch (e) {
+        debugPrint('Error parsing time: $e');
+      }
 
       // Update the form fields with the schedule details
       setState(() {
@@ -103,6 +139,7 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
       );
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
