@@ -3,13 +3,11 @@ import 'package:file_picker/file_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class DocumentScreen extends StatefulWidget {
-  final String userId;
   final String scheduleId;
   final String noteId;
 
   const DocumentScreen({
     Key? key,
-    required this.userId,
     required this.scheduleId,
     required this.noteId,
   }) : super(key: key);

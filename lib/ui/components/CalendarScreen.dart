@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:pulse/ui/components/ScheduleCalenderScreen.dart';
 import 'package:pulse/ui/ScheduleFormScreen.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:pulse/Globals.dart';
 
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({super.key});
@@ -23,8 +21,9 @@ class CalendarScreenState extends State<CalendarScreen> {
       context,
       MaterialPageRoute(
         builder: (context) => ScheduleFormScreen(
-          scheduleId: scheduleId,
+
           scheduleDate: _selectedDay,
+          scheduleId: scheduleId,
         ),
       ),
     );
@@ -34,7 +33,7 @@ class CalendarScreenState extends State<CalendarScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ScheduleFormScreen(scheduleDate: _selectedDay),
+        builder: (context) => ScheduleFormScreen(scheduleId: null, scheduleDate: _selectedDay ),
       ),
     );
   }

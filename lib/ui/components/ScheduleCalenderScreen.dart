@@ -1,7 +1,6 @@
 
 
 import 'package:flutter/material.dart';
-import 'package:pulse/Globals.dart';
 import 'package:pulse/models/Schedules.dart';
 
 class ScheduleCalenderScreen extends StatefulWidget {
@@ -93,7 +92,7 @@ class _ScheduleCalenderScreenState extends State<ScheduleCalenderScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Appointment Reminder: "${schedule.title}"',
+                                schedule.title,
                                 style: TextStyle(color: Colors.white),
                               ),
                             ],
