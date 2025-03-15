@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:pulse/globals.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Note {
   Note({
@@ -19,11 +19,13 @@ class NoteService {
   /// Fetch all notes for a specific schedule
   Future<List<Note>> getNotes(String scheduleId) async {
     List<Note> notes = [];
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? UserId = prefs.getString('user_id');
 
     try {
       QuerySnapshot querySnapshot = await _firestore
           .collection('users')
-          .doc(globalUserId)
+          .doc(UserId)
           .collection('schedules')
           .doc(scheduleId)
           .collection('notes')

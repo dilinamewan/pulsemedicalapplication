@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:pulse/Globals.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 
 class User {
@@ -28,10 +28,12 @@ class UserService {
   // Example of a method that fetches users
    Future<List<User>> getUsers(String userId) async {
     List<User> users = [];
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? UserId = prefs.getString('user_id');
 
     try {
       // Query 'users' collection
-      QuerySnapshot querySnapshot = await _firestore.collection('users').where("uid",isEqualTo:globalUserId).get();
+      QuerySnapshot querySnapshot = await _firestore.collection('users').where("uid",isEqualTo:UserId).get();
 
       // Iterate over the results and build 'User' objects
       for (var doc in querySnapshot.docs) {

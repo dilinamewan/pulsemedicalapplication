@@ -2,7 +2,8 @@ import 'dart:io';
 import 'package:path/path.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:pulse/Globals.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 
 class Document {
   Document({
@@ -23,11 +24,13 @@ class DocumentService {
   /// Fetch all documents for a specific note
   Future<List<Document>> getDocuments(String scheduleId, String noteId) async {
     List<Document> documents = [];
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? UserId = prefs.getString('user_id');
 
     try {
       QuerySnapshot<Map<String, dynamic>> querySnapshot = await _firestore
           .collection('users')
-          .doc(globalUserId)
+          .doc(UserId)
           .collection('schedules')
           .doc(scheduleId)
           .collection('notes')
