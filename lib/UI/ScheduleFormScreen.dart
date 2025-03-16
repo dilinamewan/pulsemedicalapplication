@@ -4,6 +4,7 @@ import 'package:pulse/UI/NoteScreen.dart';
 import 'package:pulse/ui/components/AppBarWidget.dart';
 import 'package:pulse/models/Schedules.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:pulse/models/Hospitals.dart';
 
 
 class ScheduleFormScreen extends StatefulWidget {
@@ -27,6 +28,7 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
   TextEditingController titleController = TextEditingController();
   String? alerts;
   GeoPoint? location;
+  List<dynamic> hospitalData = [];
 
   @override
   void initState() {
@@ -40,6 +42,24 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
   void dispose() {
     titleController.dispose();
     super.dispose();
+  }
+  Future<void> fetchHospitals() async {
+    try {
+      // Create an instance of HospitalService
+      HospitalService hospitalService = HospitalService();
+
+      // Fetch all hospitals
+      List<Hospital> hospitals = await hospitalService.getHospitals();
+
+      setState(() {
+        hospitalData = hospitals;
+      });
+    } catch (e) {
+      debugPrint('Error fetching hospital details: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load hospital details: $e'))
+      );
+    }
   }
 
   Future<void> fetchScheduleDetails() async {
@@ -122,8 +142,7 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
           );
         }
 
-        // Determine if it's an all-day event (you might want to set some logic here)
-        // For example, if start time is 00:00 and end time is 23:59
+
         isAllDay = (startTime.hour == 0 && startTime.minute == 0 &&
             endTime.hour == 23 && endTime.minute == 59);
 
@@ -133,13 +152,45 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
     } catch (e) {
       // Handle any errors that might occur during fetching
       debugPrint('Error fetching schedule details: $e');
-      // You might want to show a snackbar or dialog to inform the user
       ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to load schedule details: $e'))
       );
     }
   }
   Future<void> addSchedule() async {
+    String title = titleController.text.trim();
+
+    if (title.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a title')),
+      );
+      return;
+    }
+
+    String formattedDate = "${widget.scheduleDate.year}-${widget.scheduleDate.month.toString().padLeft(2, '0')}-${widget.scheduleDate.day.toString().padLeft(2, '0')}";
+
+    ScheduleService scheduleService = ScheduleService();
+
+    await scheduleService.addSchedule(
+      title,
+      formattedDate,
+      "${startTime.hour}:${startTime.minute}",
+      "${endTime.hour}:${endTime.minute}",
+      location!,
+      alerts ?? 'No Alert',
+      '0xFFFF0000',
+    );
+
+    // Show a snackbar to inform the user
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Schedule added successfully')),
+    );
+
+    // Navigate back to the previous screen
+    Navigator.pop(context);
+  }
+
+  Future<void> updateSchedule() async {
     // Get the title from the text field
     String title = titleController.text.trim();
 
@@ -157,23 +208,22 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
     // Create an instance of ScheduleService
     ScheduleService scheduleService = ScheduleService();
 
-    // Add the schedule to the database
-    await scheduleService.addSchedule(
+    // Update the schedule in the database
+    await scheduleService.updateSchedule(
+      widget.scheduleId!,
       title,
       formattedDate,
       "${startTime.hour}:${startTime.minute}",
       "${endTime.hour}:${endTime.minute}",
       location!,
       alerts ?? 'No Alert',
-      '#FF000000',
+      '0xFFFF0000',
     );
 
-    // Show a snackbar to inform the user
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Schedule added successfully')),
+      const SnackBar(content: Text('Schedule updated successfully')),
     );
 
-    // Navigate back to the previous screen
     Navigator.pop(context);
   }
 
@@ -204,13 +254,57 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
             const SizedBox(height: 20),
             _buildTimePickerCard(),
             const SizedBox(height: 20),
-            _buildOptionNav('Note', Icons.sticky_note_2),
+            _buildOptionNote('Note', Icons.sticky_note_2),
             _buildOptionTileAlert('Alert', Icons.notifications),
-            _buildOptionTile('Location', Icons.location_on),
+            _buildOptionTileLocation('Location', Icons.location_on),
+            const Spacer(), // Pushes buttons to the bottom
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context); // Closes the screen
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent, // Cancel button color
+                    padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+                  ),
+                  child: const Text("Cancel", style: TextStyle(color: Colors.white)),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    if (widget.scheduleId == null) {
+                      addSchedule();
+                    } else {
+                      blockPastDates();
+                    }
+                    Navigator.pop(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent, // Save button color
+                    padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+                  ),
+                  child: const Text("Save", style: TextStyle(color: Colors.white)),
+
+                ),
+              ],
+            ),
+            const SizedBox(height: 20), // Space at the bottom
           ],
         ),
       ),
     );
+  }
+  void blockPastDates() {
+    if (widget.scheduleDate.isBefore(DateTime.now())) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Cannot add schedule for past dates"),
+        ),
+      );
+    } else {
+      updateSchedule();
+    }
   }
 
   Widget _buildTextField(String hint, IconData icon, Color color, TextEditingController controller) {
@@ -232,20 +326,46 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
       ),
     );
   }
-  Widget _buildOptionNav(String title, IconData icon) {
+  Widget _buildOptionNote(String title, IconData icon) {
     return GestureDetector(
       onTap: () {
-        // Navigate to the NoteScreen
+        
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => NoteScreen(
             scheduleId: widget.scheduleId.toString(),
-
           )),
         );
       },
       child: _buildOptionTile(title, icon),
     );
+  }
+  Widget _buildOptionTile(String title, IconData icon) {
+
+    return
+      GestureDetector(
+        child: Container(
+        margin: const EdgeInsets.only(top: 10),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        decoration: BoxDecoration(
+          color: Colors.grey[900],
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: Colors.white54),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(color: Colors.white),
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios, color: Colors.white54, size: 16),
+          ],
+        ),
+      ),
+      );
   }
   Widget _buildTimePickerCard() {
     return Container(
@@ -323,15 +443,21 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
     );
   }
 
-  Widget _buildOptionTile(String title, IconData icon) {
+  Widget _buildOptionTileLocation(String title, IconData icon) {
 
     return
       GestureDetector(
         onTap: () {
 
-          if (title == 'Location') {
-            openGoogleMaps();
+
+            if(widget.scheduleId == null) {
+              fetchHospitals();
+              _showHospitalOverlay();
+            } else {
+
+            _showViewUpdateOverlay();
           }
+
 
     },child: Container(
       margin: const EdgeInsets.only(top: 10),
@@ -386,6 +512,89 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
       ),
     );
   }
+  void _showViewUpdateOverlay() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.grey[900],
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    "View or Update",
+                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // View Option (Opens Google Maps)
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pop(context); // Close overlay
+                      openGoogleMaps(); // Open Google Maps
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      margin: const EdgeInsets.only(bottom: 10),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[800],
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.map, color: Colors.blueAccent),
+                          const SizedBox(width: 10),
+                          const Expanded(
+                            child: Text("View Location", style: TextStyle(color: Colors.white)),
+                          ),
+                          const Icon(Icons.arrow_forward_ios, color: Colors.white54, size: 16),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // Update Option (Opens Hospital Selection)
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pop(context); // Close overlay
+                      fetchHospitals(); // Fetch hospitals before showing overlay
+                      _showHospitalOverlay(); // Open hospital selection overlay
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[800],
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+
+                      child: Row(
+                        children: [
+                          const Icon(Icons.local_hospital, color: Colors.redAccent),
+                          const SizedBox(width: 10),
+                          const Expanded(
+                            child: Text("Update Location", style: TextStyle(color: Colors.white)),
+                          ),
+                          const Icon(Icons.arrow_forward_ios, color: Colors.white54, size: 16),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+
 
   void _showAlertOverlay() {
     showModalBottomSheet(
@@ -410,6 +619,59 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
                   _buildRadioTile(setState, "10 minutes before", "10m"),
                   _buildRadioTile(setState, "1 hour before", "1h"),
                   _buildRadioTile(setState, "1 day before", "1d"),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    child: const Text("Done"),
+                  )
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+  void _showHospitalOverlay() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.grey[900],
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    "Select Hospital",
+                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: hospitalData.length,
+                      itemBuilder: (context, index) {
+                        var hospital = hospitalData[index];
+                        return ListTile(
+                          title: Text(hospital.name, style: const TextStyle(color: Colors.white)),
+                          onTap: () {
+                            setState(() {
+                              location = hospital.location;
+                            });
+                            Navigator.pop(context);
+                          },
+                        );
+                      },
+                    ),
+                  ),
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () {
