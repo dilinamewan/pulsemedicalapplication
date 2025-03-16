@@ -30,12 +30,22 @@ class CalendarScreenState extends State<CalendarScreen> {
   }
 
   void fabClick() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ScheduleFormScreen(scheduleId: null, scheduleDate: _selectedDay ),
-      ),
-    );
+    if (_selectedDay.isBefore(DateTime.now())) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Cannot add schedule for past dates"),
+        ),
+      );
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ScheduleFormScreen(
+            scheduleDate: _selectedDay,
+          ),
+        ),
+      );
+    }
   }
 
   @override
