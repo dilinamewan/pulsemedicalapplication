@@ -139,6 +139,43 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
       );
     }
   }
+  Future<void> addSchedule() async {
+    // Get the title from the text field
+    String title = titleController.text.trim();
+
+    // Validate the title
+    if (title.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a title')),
+      );
+      return;
+    }
+
+    // Format the date to match the format used in the database
+    String formattedDate = "${widget.scheduleDate.year}-${widget.scheduleDate.month.toString().padLeft(2, '0')}-${widget.scheduleDate.day.toString().padLeft(2, '0')}";
+
+    // Create an instance of ScheduleService
+    ScheduleService scheduleService = ScheduleService();
+
+    // Add the schedule to the database
+    await scheduleService.addSchedule(
+      title,
+      formattedDate,
+      "${startTime.hour}:${startTime.minute}",
+      "${endTime.hour}:${endTime.minute}",
+      location!,
+      alerts ?? 'No Alert',
+      '#FF000000',
+    );
+
+    // Show a snackbar to inform the user
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Schedule added successfully')),
+    );
+
+    // Navigate back to the previous screen
+    Navigator.pop(context);
+  }
 
 
   @override
