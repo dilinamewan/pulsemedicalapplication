@@ -82,7 +82,6 @@ class ScheduleService {
         'location': location,
         'alert_frequency': alert,
         'color': color,
-        'createdAt': FieldValue.serverTimestamp(),
       });
 
       debugPrint('Schedule added successfully');
@@ -115,9 +114,11 @@ class ScheduleService {
   }
 
   /// Delete a schedule
-  Future<void> deleteSchedule(String userId, String scheduleId) async {
+  Future<void> deleteSchedule(String scheduleId) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? UserId = prefs.getString('user_id');
     try {
-      await _firestore.collection('users').doc(userId).collection('schedules').doc(scheduleId).delete();
+      await _firestore.collection('users').doc(UserId).collection('schedules').doc(scheduleId).delete();
 
       debugPrint('Schedule deleted successfully');
     } catch (e) {
