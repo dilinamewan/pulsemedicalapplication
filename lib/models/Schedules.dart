@@ -12,6 +12,8 @@ class Schedule {
     required this.location,
     required this.alert,
     required this.color,
+    required this.notes,
+    required this.documents,
   });
 
   final String scheduleId;
@@ -22,6 +24,8 @@ class Schedule {
   final GeoPoint location;
   final String alert;
   final String color;
+  Map<String, dynamic> notes = {};
+  List<String> documents = [];
 }
 
 class ScheduleService {
@@ -57,6 +61,10 @@ class ScheduleService {
                   : const GeoPoint(0.0, 0.0),
               alert: data['alert_frequency'] ?? 'No Alert',
               color: data['color'] ?? '#FF000000',
+              notes: data['note'] ?? {},
+              documents: data['docs'] != null
+                  ? List<String>.from(data['docs'])
+                  : [],
             ),
           );
         }
@@ -70,7 +78,7 @@ class ScheduleService {
 
   /// Add a new schedule
   Future<void> addSchedule(
-      String title, String date, String startTime, String endTime, GeoPoint location, String alert, String color) async {
+      String title, String date, String startTime, String endTime, GeoPoint location, String alert, String color, Map notes, List docs) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? UserId = prefs.getString('user_id');
     try {
@@ -82,6 +90,8 @@ class ScheduleService {
         'location': location,
         'alert_frequency': alert,
         'color': color,
+        'note': notes,
+        'docs': docs,
       });
 
       debugPrint('Schedule added successfully');
@@ -92,7 +102,7 @@ class ScheduleService {
 
   /// Update an existing schedule
   Future<void> updateSchedule(
-       String scheduleId, String title, String date, String startTime, String endTime, GeoPoint location, String alert, String color) async {
+       String scheduleId, String title, String date, String startTime, String endTime, GeoPoint location, String alert, String color, Map notes, List docs) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? UserId = prefs.getString('user_id');
     try {
@@ -104,6 +114,8 @@ class ScheduleService {
         'location': location,
         'alert_frequency': alert,
         'color': color,
+        'note': notes,
+        'docs': docs,
         'updatedAt': FieldValue.serverTimestamp(),
       });
 
