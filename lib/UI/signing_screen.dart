@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:local_auth/local_auth.dart';
 import 'package:pulse/ui/component/reusable_widget.dart';
 import '../utils/color_utils.dart';
 import 'package:pulse/ui/home_screen.dart';
@@ -20,14 +21,39 @@ class _SignInScreenState extends State<SignInScreen> {
   final TextEditingController _passwordTextController = TextEditingController();
   final GlobalKey<ScaffoldMessengerState> _scaffoldKey =
       GlobalKey<ScaffoldMessengerState>();
+  final LocalAuthentication _localAuth = LocalAuthentication();
   bool isPasswordType = true;
   bool _rememberMe = false;
   late SharedPreferences _prefs;
+  bool _canCheckBiometrics = false;
 
   @override
   void initState() {
     super.initState();
-    _loadSavedCredentials();
+    _loadSavedCredentials().then((_) {
+      _checkBiometricSupport().then((_) {
+        // Automatically attempt biometric authentication after loading credentials
+        if (_canCheckBiometrics && _rememberMe) {
+          _authenticateWithBiometrics();
+        }
+      });
+    });
+  }
+
+  Future<void> _checkBiometricSupport() async {
+    try {
+      final bool canCheckBiometrics = await _localAuth.canCheckBiometrics;
+      final bool isDeviceSupported = await _localAuth.isDeviceSupported();
+      setState(() {
+        _canCheckBiometrics = canCheckBiometrics || isDeviceSupported;
+      });
+
+      if (!_canCheckBiometrics) {
+        _showErrorMessage('Biometrics not supported on this device');
+      }
+    } catch (e) {
+      _showErrorMessage('Error checking biometrics: $e');
+    }
   }
 
   Future<void> _loadSavedCredentials() async {
@@ -53,6 +79,41 @@ class _SignInScreenState extends State<SignInScreen> {
     }
   }
 
+  Future<void> _authenticateWithBiometrics() async {
+    try {
+      String? savedEmail = _prefs.getString('email');
+      String? savedPassword = _prefs.getString('password');
+      if (savedEmail == null || savedPassword == null) {
+        _showErrorMessage('No saved credentials found. Please sign in first.');
+        return;
+      }
+
+      final bool didAuthenticate = await _localAuth.authenticate(
+        localizedReason: 'Please authenticate to sign in',
+        options: const AuthenticationOptions(
+          biometricOnly: true,
+          stickyAuth: true,
+          useErrorDialogs: true,
+        ),
+      );
+
+      if (didAuthenticate) {
+        await FirebaseAuth.instance.signInWithEmailAndPassword(
+          email: savedEmail,
+          password: savedPassword,
+        );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => HomeScreen()),
+        );
+      } else {
+        _showErrorMessage('Biometric authentication cancelled');
+      }
+    } catch (e) {
+      _showErrorMessage('Biometric authentication failed: $e');
+    }
+  }
+
   void _signIn() async {
     String email = _emailTextController.text.trim();
     String password = _passwordTextController.text.trim();
@@ -68,7 +129,6 @@ class _SignInScreenState extends State<SignInScreen> {
         password: password,
       );
 
-      // Save credentials if remember me is checked
       await _saveCredentials();
 
       Navigator.pushReplacement(
@@ -129,11 +189,39 @@ class _SignInScreenState extends State<SignInScreen> {
                   _emailTextController,
                 ),
                 SizedBox(height: 30),
-                reusableTextField(
-                  "Enter Password",
-                  Icons.lock_outline,
-                  isPasswordType,
-                  _passwordTextController,
+                TextField(
+                  controller: _passwordTextController,
+                  obscureText: isPasswordType,
+                  enableSuggestions: false,
+                  autocorrect: false,
+                  decoration: InputDecoration(
+                    labelText: "Enter Password",
+                    prefixIcon: Icon(Icons.lock_outline, color: Colors.black54),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        isPasswordType
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                        color: Colors.black54,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          isPasswordType = !isPasswordType;
+                        });
+                      },
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(color: Colors.black54),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(color: Colors.blue),
+                    ),
+                  ),
                 ),
                 SizedBox(height: 20),
                 Row(
@@ -177,7 +265,7 @@ class _SignInScreenState extends State<SignInScreen> {
                 SizedBox(height: 30),
                 signInSignUpButton(context, true, _signIn),
                 SizedBox(height: 20),
-                signUpOption()
+                signUpOption(),
               ],
             ),
           ),
