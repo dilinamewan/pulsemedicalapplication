@@ -30,7 +30,8 @@ class CalendarScreenState extends State<CalendarScreen> {
   }
 
   void fabClick() {
-    if (_selectedDay.isBefore(DateTime.now())) {
+
+    if (_selectedDay.microsecondsSinceEpoch < DateTime.now().microsecondsSinceEpoch) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text("Cannot add schedule for past dates"),
