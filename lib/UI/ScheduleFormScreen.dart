@@ -29,7 +29,8 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
   String? alerts;
   GeoPoint? location;
   List<dynamic> hospitalData = [];
-
+  Map<String, dynamic> notes = {};
+  List<String> docs = [];
   @override
   void initState() {
     super.initState();
@@ -123,6 +124,8 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
         titleController.text = schedule.title;
         alerts = schedule.alert;
         location = schedule.location;
+        notes = schedule.notes;
+        docs = schedule.documents;
 
         // Parse the start time
         List<String> startParts = schedule.startTime.split(':');
@@ -179,6 +182,8 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
       location!,
       alerts ?? 'No Alert',
       '0xFFFF0000',
+      notes,
+      docs,
     );
 
     // Show a snackbar to inform the user
@@ -218,6 +223,8 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
       location!,
       alerts ?? 'No Alert',
       '0xFFFF0000',
+      notes,
+      docs,
     );
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -296,7 +303,7 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
     );
   }
   void blockPastDates() {
-    if (widget.scheduleDate.isBefore(DateTime.now())) {
+    if (widget.scheduleDate.microsecondsSinceEpoch < DateTime.now().microsecondsSinceEpoch) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text("Cannot add schedule for past dates"),
@@ -329,13 +336,26 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
   Widget _buildOptionNote(String title, IconData icon) {
     return GestureDetector(
       onTap: () {
-        
+
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => NoteScreen(
-            scheduleId: widget.scheduleId.toString(),
-          )),
+          MaterialPageRoute(
+            builder: (context) => NoteScreen(
+              title: notes['title'] ?? '',
+              content: notes['content'] ?? '',
+              docs: docs,
+              scheduleId: widget.scheduleId.toString(),
+              onSave: (newTitle, newContent, newDocs) {
+                setState(() {
+                  notes['title'] = newTitle;
+                  notes['content'] = newContent;
+                  docs = newDocs!;
+                });
+              },
+            ),
+          ),
         );
+
       },
       child: _buildOptionTile(title, icon),
     );

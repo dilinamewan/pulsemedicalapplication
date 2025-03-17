@@ -4,13 +4,16 @@ import 'package:permission_handler/permission_handler.dart';
 
 class DocumentScreen extends StatefulWidget {
   final String scheduleId;
-  final String noteId;
 
-  const DocumentScreen({
+  List<String>? docs;
+
+  DocumentScreen({
     Key? key,
     required this.scheduleId,
-    required this.noteId,
+    this.docs,
   }) : super(key: key);
+
+
 
   @override
   _DocumentScreenState createState() => _DocumentScreenState();
@@ -22,7 +25,8 @@ class _DocumentScreenState extends State<DocumentScreen> {
   @override
   void initState() {
     super.initState();
-    _requestPermissions(); // Request permissions when the screen loads
+    _requestPermissions();
+    _fetchDocuments();// Request permissions when the screen loads
   }
 
   @override
@@ -65,6 +69,13 @@ class _DocumentScreenState extends State<DocumentScreen> {
       _uploadedFiles.removeAt(index);
     });
     print("File deleted: ${_uploadedFiles[index]}");
+  }
+  void _fetchDocuments() async {
+    for (var doc in widget.docs!) {
+      setState(() {
+        _uploadedFiles.add(doc);
+      });
+    }
   }
 
   @override

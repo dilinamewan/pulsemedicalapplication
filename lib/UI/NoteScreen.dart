@@ -1,13 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:pulse/ui/components/documentscreen.dart';
-import 'package:pulse/models/Notes.dart';
+
+
+
 
 class NoteScreen extends StatefulWidget {
+  final String? title;
+  final String? content;
+  List<String>? docs;
   final String scheduleId;
+  final Function(String, String, List<String>?) onSave; // Callback function
 
-  const NoteScreen({
+  NoteScreen({
     Key? key,
+    this.title,
+    this.content,
+    this.docs,
     required this.scheduleId,
+    required this.onSave, // Receive the function
   }) : super(key: key);
 
   @override
@@ -15,8 +25,7 @@ class NoteScreen extends StatefulWidget {
 }
 
 class _NoteScreenState extends State<NoteScreen> {
-  final NoteService _noteService = NoteService();
-  List<Note> _notes = [];
+
   TextEditingController _titleController = TextEditingController();
   TextEditingController _contentController = TextEditingController();
 
@@ -25,19 +34,21 @@ class _NoteScreenState extends State<NoteScreen> {
     super.initState();
     if (widget.scheduleId.isNotEmpty) {
       _fetchNotes();
-    }
+    }else
+      setValues();
+  }
+  void setValues(){
+    _titleController.text = widget.title ?? "";
+    _contentController.text = widget.content ?? "";
+
+  }
+  void _fetchNotes() async {
+    _titleController.text = widget.title ?? "";
+    _contentController.text = widget.content ?? "";
   }
 
-  void _fetchNotes() async {
-    List<Note> notes = await _noteService.getNotes(widget.scheduleId);
-    if (notes.isNotEmpty) {
-      setState(() {
-        _notes = notes;
-        _titleController.text = notes.first.title;
-        _contentController.text = notes.first.content;
-      });
-    }
-  }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -112,12 +123,47 @@ class _NoteScreenState extends State<NoteScreen> {
             SizedBox(
               height: 150,
               child: DocumentScreen(
-                key: ValueKey(widget.scheduleId),
+                docs: widget.docs,
                 scheduleId: widget.scheduleId,
-                noteId: _notes.isNotEmpty ? _notes.first.noteId : "",
               ),
             ),
+            //const Spacer(), // Pushes buttons to the bottom
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context); // Closes the screen
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent, // Cancel button color
+                    padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+                  ),
+                  child: const Text("Cancel", style: TextStyle(color: Colors.white)),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    // Call the onSave function with updated values
+                    widget.onSave(
+                      _titleController.text,
+                      _contentController.text,
+                      widget.docs, // Assuming docs can be updated elsewhere
+                    );
+
+                    Navigator.pop(context); // Close the screen
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+                  ),
+                  child: const Text("Save", style: TextStyle(color: Colors.white)),
+                ),
+
+              ],
+            ),
+
             SizedBox(height: 20),
+
           ],
         ),
       ),
