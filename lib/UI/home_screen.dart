@@ -4,6 +4,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:pulse/ui/signing_screen.dart'; // Adjust import based on your project structure
+import 'package:pulse/ui/profile_screen.dart'; // Import the ProfileScreen
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -23,8 +24,21 @@ class _HomeScreenState extends State<HomeScreen> {
         automaticallyImplyLeading: false,
         title: Text("Home"),
         actions: [
+          // Profile Button
+          IconButton(
+            icon: Icon(Icons.person, color: Colors.white),
+            tooltip: 'Profile',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ProfileScreen()),
+              );
+            },
+          ),
+          // Logout Button
           IconButton(
             icon: Icon(Icons.logout, color: Colors.white),
+            tooltip: 'Logout',
             onPressed: _signOut,
           ),
         ],
@@ -64,6 +78,46 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: Colors.grey[700],
               ),
             ),
+            SizedBox(height: 30),
+            // Profile Button as a Card
+            Card(
+              elevation: 4,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const ProfileScreen()),
+                  );
+                },
+                borderRadius: BorderRadius.circular(15),
+                child: Container(
+                  padding: EdgeInsets.symmetric(vertical: 15, horizontal: 25),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.account_circle,
+                        size: 28,
+                        color: Colors.blue[900],
+                      ),
+                      SizedBox(width: 10),
+                      Text(
+                        "View Profile",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue[900],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -97,7 +151,8 @@ class _HomeScreenState extends State<HomeScreen> {
       final String emergencyContactNumber = await _getEmergencyContactNumber();
 
       // Prepare SMS message with the Google Maps URL
-      final String message = 'EMERGENCY! I need help. My live location is: $liveLocationUrl';
+      final String message =
+          'EMERGENCY! I need help. My live location is: $liveLocationUrl';
 
       // Send SMS
       await _sendEmergencySMS(emergencyContactNumber, message);
@@ -137,7 +192,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // Send SMS
-  Future<void> _sendEmergencySMS(String emergencyContactNumber, String message) async {
+  Future<void> _sendEmergencySMS(
+      String emergencyContactNumber, String message) async {
     final Uri smsUri = Uri(
       scheme: 'sms',
       path: emergencyContactNumber,
@@ -178,4 +234,4 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return userDoc['emergencyContactNumber'];
   }
-} 
+}
