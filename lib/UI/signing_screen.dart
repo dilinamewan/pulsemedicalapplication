@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:local_auth/local_auth.dart';
 import 'package:pulse/ui/component/reusable_widget.dart';
 import '../utils/color_utils.dart';
 import 'package:pulse/ui/home_screen.dart';
@@ -20,14 +21,47 @@ class _SignInScreenState extends State<SignInScreen> {
   final TextEditingController _passwordTextController = TextEditingController();
   final GlobalKey<ScaffoldMessengerState> _scaffoldKey =
       GlobalKey<ScaffoldMessengerState>();
-  bool isPasswordType = true; // Controls password visibility
+  final LocalAuthentication _localAuth = LocalAuthentication();
+  bool isPasswordType = true;
   bool _rememberMe = false;
   late SharedPreferences _prefs;
+  bool _canCheckBiometrics = false;
+  String _biometricStatus = ''; // For debugging
 
   @override
   void initState() {
     super.initState();
     _loadSavedCredentials();
+    _checkBiometricSupport();
+  }
+
+  Future<void> _checkBiometricSupport() async {
+    try {
+      // Check if biometric authentication is available
+      final bool canCheckBiometrics = await _localAuth.canCheckBiometrics;
+      final bool isDeviceSupported = await _localAuth.isDeviceSupported();
+      final List<BiometricType> availableBiometrics =
+          await _localAuth.getAvailableBiometrics();
+
+      setState(() {
+        _canCheckBiometrics = canCheckBiometrics || isDeviceSupported;
+        _biometricStatus = 'Can check: $canCheckBiometrics\n'
+            'Device supported: $isDeviceSupported\n'
+            'Available: $availableBiometrics';
+      });
+
+      if (_canCheckBiometrics && availableBiometrics.isEmpty) {
+        _showErrorMessage('No biometrics enrolled on this device');
+        setState(() {
+          _biometricStatus += '\nNo biometrics enrolled';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _biometricStatus = 'Error checking biometrics: $e';
+      });
+      print('Error checking biometrics: $e');
+    }
   }
 
   Future<void> _loadSavedCredentials() async {
@@ -53,6 +87,47 @@ class _SignInScreenState extends State<SignInScreen> {
     }
   }
 
+  Future<void> _authenticateWithBiometrics() async {
+    try {
+      if (!_rememberMe) {
+        _showErrorMessage('Please enable "Remember Me" first');
+        return;
+      }
+
+      String? savedEmail = _prefs.getString('email');
+      String? savedPassword = _prefs.getString('password');
+      if (savedEmail == null || savedPassword == null) {
+        _showErrorMessage('No saved credentials found. Please sign in first.');
+        return;
+      }
+
+      final bool didAuthenticate = await _localAuth.authenticate(
+        localizedReason: 'Please authenticate to sign in',
+        options: const AuthenticationOptions(
+          biometricOnly: true,
+          stickyAuth: true,
+          useErrorDialogs: true, // Show system error dialogs
+        ),
+      );
+
+      if (didAuthenticate) {
+        await FirebaseAuth.instance.signInWithEmailAndPassword(
+          email: savedEmail,
+          password: savedPassword,
+        );
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => HomeScreen()),
+        );
+      } else {
+        _showErrorMessage('Biometric authentication cancelled');
+      }
+    } catch (e) {
+      _showErrorMessage('Biometric authentication failed: $e');
+    }
+  }
+
   void _signIn() async {
     String email = _emailTextController.text.trim();
     String password = _passwordTextController.text.trim();
@@ -68,7 +143,6 @@ class _SignInScreenState extends State<SignInScreen> {
         password: password,
       );
 
-      // Save credentials if remember me is checked
       await _saveCredentials();
 
       Navigator.pushReplacement(
@@ -129,10 +203,9 @@ class _SignInScreenState extends State<SignInScreen> {
                   _emailTextController,
                 ),
                 SizedBox(height: 30),
-                // Password TextField with Show/Hide Toggle
                 TextField(
                   controller: _passwordTextController,
-                  obscureText: isPasswordType, // Toggles password visibility
+                  obscureText: isPasswordType,
                   enableSuggestions: false,
                   autocorrect: false,
                   decoration: InputDecoration(
@@ -147,7 +220,7 @@ class _SignInScreenState extends State<SignInScreen> {
                       ),
                       onPressed: () {
                         setState(() {
-                          isPasswordType = !isPasswordType; // Toggle visibility
+                          isPasswordType = !isPasswordType;
                         });
                       },
                     ),
@@ -205,8 +278,40 @@ class _SignInScreenState extends State<SignInScreen> {
                 ),
                 SizedBox(height: 30),
                 signInSignUpButton(context, true, _signIn),
+                if (_canCheckBiometrics)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 20),
+                    child: Column(
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed: _authenticateWithBiometrics,
+                          icon: Icon(Icons.fingerprint),
+                          label: Text("Sign in with Biometrics"),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue[900],
+                            foregroundColor: Colors.white,
+                            minimumSize: Size(double.infinity, 50),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                        ),
+                        // Debug info (remove in production)
+                        if (_biometricStatus.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 10),
+                            child: Text(
+                              _biometricStatus,
+                              style:
+                                  TextStyle(fontSize: 12, color: Colors.grey),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
                 SizedBox(height: 20),
-                signUpOption()
+                signUpOption(),
               ],
             ),
           ),
