@@ -18,8 +18,9 @@ class SignInScreen extends StatefulWidget {
 class _SignInScreenState extends State<SignInScreen> {
   final TextEditingController _emailTextController = TextEditingController();
   final TextEditingController _passwordTextController = TextEditingController();
-  final GlobalKey<ScaffoldMessengerState> _scaffoldKey = GlobalKey<ScaffoldMessengerState>();
-  bool isPasswordType = true;
+  final GlobalKey<ScaffoldMessengerState> _scaffoldKey =
+      GlobalKey<ScaffoldMessengerState>();
+  bool isPasswordType = true; // Controls password visibility
   bool _rememberMe = false;
   late SharedPreferences _prefs;
 
@@ -66,10 +67,10 @@ class _SignInScreenState extends State<SignInScreen> {
         email: email,
         password: password,
       );
-      
+
       // Save credentials if remember me is checked
       await _saveCredentials();
-      
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => HomeScreen()),
@@ -128,11 +129,40 @@ class _SignInScreenState extends State<SignInScreen> {
                   _emailTextController,
                 ),
                 SizedBox(height: 30),
-                reusableTextField(
-                  "Enter Password",
-                  Icons.lock_outline,
-                  isPasswordType,
-                  _passwordTextController,
+                // Password TextField with Show/Hide Toggle
+                TextField(
+                  controller: _passwordTextController,
+                  obscureText: isPasswordType, // Toggles password visibility
+                  enableSuggestions: false,
+                  autocorrect: false,
+                  decoration: InputDecoration(
+                    labelText: "Enter Password",
+                    prefixIcon: Icon(Icons.lock_outline, color: Colors.black54),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        isPasswordType
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                        color: Colors.black54,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          isPasswordType = !isPasswordType; // Toggle visibility
+                        });
+                      },
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(color: Colors.black54),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(color: Colors.blue),
+                    ),
+                  ),
                 ),
                 SizedBox(height: 20),
                 Row(
@@ -159,7 +189,8 @@ class _SignInScreenState extends State<SignInScreen> {
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => ForgotPasswordScreen()),
+                          MaterialPageRoute(
+                              builder: (context) => ForgotPasswordScreen()),
                         );
                       },
                       child: Text(
