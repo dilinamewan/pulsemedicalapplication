@@ -8,18 +8,18 @@ class NoteScreen extends StatefulWidget {
   final Function(String) onNoteSelected;
 
   const NoteScreen({
-    Key? key,
+    super.key,
     required this.userId,
     required this.scheduleId,
     required this.onNoteSelected,
-  }) : super(key: key);
+  });
 
   @override
   _NoteScreenState createState() => _NoteScreenState();
 }
 
 class _NoteScreenState extends State<NoteScreen> {
-  List<String> _uploadedFiles = []; // Track uploaded files
+  final List<String> _uploadedFiles = []; // Track uploaded files
 final NoteService _noteService = NoteService();
   List<Note> _notes = [];
 

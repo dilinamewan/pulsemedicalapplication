@@ -8,18 +8,18 @@ class DocumentScreen extends StatefulWidget {
   final String noteId;
 
   const DocumentScreen({
-    Key? key,
+    super.key,
     required this.userId,
     required this.scheduleId,
     required this.noteId,
-  }) : super(key: key);
+  });
 
   @override
   _DocumentScreenState createState() => _DocumentScreenState();
 }
 
 class _DocumentScreenState extends State<DocumentScreen> {
-  List<String> _uploadedFiles = []; // List to store uploaded file names
+  final List<String> _uploadedFiles = []; // List to store uploaded file names
 
   @override
   void initState() {
