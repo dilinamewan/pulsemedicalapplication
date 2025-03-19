@@ -3,35 +3,32 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:awesome_notifications/awesome_notifications.dart';
+import 'package:pulse/services/notification_service.dart';
 
-Future main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
-    //firebase configuration
+    // Firebase configuration
     await Firebase.initializeApp();
-    //.env configuration
+
+    // Initialize notifications
+    final notificationService = NotificationService();
+    await notificationService.initNotifications();
+
+    // Load .env configuration
     await dotenv.load(fileName: ".env");
   } catch (e) {
-    throw Exception('Error $e');
+    throw Exception('Error initializing the app: $e');
   }
-  
-  //notification configuration
-  await AwesomeNotifications().initialize(null, [
-    NotificationChannel(
-      channelKey: 'basic_channel',
-      channelName: 'Basic Notifications',
-      channelDescription: 'Notification channel for basic tests',
-      defaultColor: Colors.blue,
-      importance: NotificationImportance.High,
-    ),
 
-  ]);
-  
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
+
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -41,7 +38,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const SignInScreen()
+      home: const SignInScreen(),
     );
   }
 }
