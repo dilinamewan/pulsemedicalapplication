@@ -2,7 +2,6 @@ import 'ui/signing_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:pulse/services/notification_service.dart';
 
 Future<void> main() async {
