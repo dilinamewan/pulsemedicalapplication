@@ -137,4 +137,5 @@ class ScheduleService {
       debugPrint('Error deleting schedule: $e');
     }
   }
+
 }
