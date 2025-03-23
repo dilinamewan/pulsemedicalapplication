@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pulse/ui/components/documentscreen.dart';
-
+import 'package:pulse/ui/components/documentscreen.dart' show DocumentScreen;
 
 
 
@@ -10,6 +10,7 @@ class NoteScreen extends StatefulWidget {
   List<String>? docs;
   final String scheduleId;
   final Function(String, String, List<String>?) onSave; // Callback function
+
 
   NoteScreen({
     Key? key,
@@ -47,6 +48,13 @@ class _NoteScreenState extends State<NoteScreen> {
     _contentController.text = widget.content ?? "";
   }
 
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _contentController.dispose();
+
+    super.dispose();
+  }
 
 
 
@@ -123,9 +131,17 @@ class _NoteScreenState extends State<NoteScreen> {
             SizedBox(
               height: 150,
               child: DocumentScreen(
-                docs: widget.docs,
+                docs: widget.docs ?? [], // Ensure it's not null
                 scheduleId: widget.scheduleId,
-              ),
+                  onDocsUpdated: (updatedDocs) {
+                    if (mounted) {
+                      setState(() {
+                        widget.docs = List.from(updatedDocs ?? []);
+                      });
+                    }
+                  },
+              )
+
             ),
             //const Spacer(), // Pushes buttons to the bottom
             Row(
@@ -143,14 +159,14 @@ class _NoteScreenState extends State<NoteScreen> {
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    // Call the onSave function with updated values
+                    // Call onSave with updated docs list
                     widget.onSave(
                       _titleController.text,
                       _contentController.text,
-                      widget.docs, // Assuming docs can be updated elsewhere
+                      List.from(widget.docs ?? []), // Ensure list is not null
                     );
 
-                    Navigator.pop(context); // Close the screen
+                    Navigator.pop(context);
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.transparent,
@@ -158,6 +174,7 @@ class _NoteScreenState extends State<NoteScreen> {
                   ),
                   child: const Text("Save", style: TextStyle(color: Colors.white)),
                 ),
+
 
               ],
             ),
