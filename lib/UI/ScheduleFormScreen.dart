@@ -1,10 +1,17 @@
+import 'dart:io';
+import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_native_splash/cli_commands.dart';
 import 'package:pulse/UI/NoteScreen.dart';
+import 'package:pulse/UI/components/ScheduleCalenderScreen.dart';
 import 'package:pulse/ui/components/AppBarWidget.dart';
 import 'package:pulse/models/Schedules.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:pulse/models/Hospitals.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'components/CalendarScreen.dart';
 
 
 class ScheduleFormScreen extends StatefulWidget {
@@ -22,7 +29,8 @@ class ScheduleFormScreen extends StatefulWidget {
 }
 
 class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
-  bool isAllDay = false;
+  final GlobalKey<CalendarScreenState> _calendarKey = GlobalKey<CalendarScreenState>();
+  final SupabaseClient supabase = Supabase.instance.client;
   TimeOfDay startTime = TimeOfDay.now();
   TimeOfDay endTime = TimeOfDay.now();
   TextEditingController titleController = TextEditingController();
@@ -31,6 +39,8 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
   List<dynamic> hospitalData = [];
   Map<String, dynamic> notes = {};
   List<String> docs = [];
+  List<String> docFile=[];
+  Color? Tcolor;
   @override
   void initState() {
     super.initState();
@@ -112,20 +122,22 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
         startTime = parseTimeOfDay(schedule.startTime);
         endTime = parseTimeOfDay(schedule.endTime);
 
-        // Determine if it's an all-day event (00:00 - 23:59)
-        isAllDay = (startTime.hour == 0 && startTime.minute == 0 &&
-            endTime.hour == 23 && endTime.minute == 59);
+
       } catch (e) {
         debugPrint('Error parsing time: $e');
       }
+
+
 
       // Update the form fields with the schedule details
       setState(() {
         titleController.text = schedule.title;
         alerts = schedule.alert;
         location = schedule.location;
-        notes = schedule.notes;
-        docs = schedule.documents;
+        notes = schedule.notes!;
+        docs = schedule.documents!;
+        docFile=schedule.documents!;
+        Tcolor = Color(int.parse(schedule.color));
 
         // Parse the start time
         List<String> startParts = schedule.startTime.split(':');
@@ -145,12 +157,6 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
           );
         }
 
-
-        isAllDay = (startTime.hour == 0 && startTime.minute == 0 &&
-            endTime.hour == 23 && endTime.minute == 59);
-
-        // Note: You would need to add controllers for note, alert, and location
-        // if you want to populate those fields as well
       });
     } catch (e) {
       // Handle any errors that might occur during fetching
@@ -160,6 +166,7 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
       );
     }
   }
+
   Future<void> addSchedule() async {
     String title = titleController.text.trim();
 
@@ -167,7 +174,30 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter a title')),
       );
-      return;
+    }
+    if (title.isNotEmpty) {
+      String formattedDate = "${widget.scheduleDate.year}-${widget.scheduleDate.month.toString().padLeft(2, '0')}-${widget.scheduleDate.day.toString().padLeft(2, '0')}";
+
+      ScheduleService scheduleService = ScheduleService();
+
+      await scheduleService.addSchedule(
+        title,
+        formattedDate,
+        "${startTime.hour}:${startTime.minute}",
+        "${endTime.hour}:${endTime.minute}",
+        location?? GeoPoint(0.0, 0.0),
+        alerts ?? '10m',
+        '0xFFFF0000',
+        notes?? {},
+        docs,
+      );
+
+      Navigator.pop(context);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Schedule added successfully')),
+      );
+
     }
 
     String formattedDate = "${widget.scheduleDate.year}-${widget.scheduleDate.month.toString().padLeft(2, '0')}-${widget.scheduleDate.day.toString().padLeft(2, '0')}";
@@ -179,25 +209,27 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
       formattedDate,
       "${startTime.hour}:${startTime.minute}",
       "${endTime.hour}:${endTime.minute}",
-      location!,
-      alerts ?? 'No Alert',
+      location?? GeoPoint(0.0, 0.0),
+      alerts ?? '10m',
       '0xFFFF0000',
-      notes,
+      notes?? {},
       docs,
     );
+    // Navigate back to the previous screen
+    Navigator.pop(context);
 
     // Show a snackbar to inform the user
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Schedule added successfully')),
     );
 
-    // Navigate back to the previous screen
-    Navigator.pop(context);
   }
+
 
   Future<void> updateSchedule() async {
     // Get the title from the text field
     String title = titleController.text.trim();
+
 
     // Validate the title
     if (title.isEmpty) {
@@ -212,6 +244,25 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
 
     // Create an instance of ScheduleService
     ScheduleService scheduleService = ScheduleService();
+    for (var i = 0; i < docs.length; i++) {
+      for (var j = 0; j < docFile.length; j++) {
+        if (docs[i] != docFile[j]) {
+          await supabase.storage.from('pulseapp').remove([docFile[j].split(',')[0]]);
+        }
+      }
+
+
+    }
+    if (docs.isEmpty) {
+
+      await supabase.storage.from('pulseapp').remove([widget.scheduleId!]);
+      final response = await supabase.storage.from('pulseapp').list(
+          path: widget.scheduleId!);
+      String fileName = response.first.name;
+      await supabase.storage.from('pulseapp').remove(
+          ['${widget.scheduleId!}/$fileName']);
+    }
+
 
     // Update the schedule in the database
     await scheduleService.updateSchedule(
@@ -220,19 +271,41 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
       formattedDate,
       "${startTime.hour}:${startTime.minute}",
       "${endTime.hour}:${endTime.minute}",
-      location!,
-      alerts ?? 'No Alert',
+      location?? GeoPoint(0.0, 0.0),
+      alerts ?? '10m',
       '0xFFFF0000',
-      notes,
+      notes?? {},
       docs,
     );
 
+    uploadFile();
+    Navigator.pop(context);
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Schedule updated successfully')),
     );
 
-    Navigator.pop(context);
   }
+  Future<void> uploadFile() async {
+    for (var i = 0; i < docs.length; i++) {
+      String filePath = docs[i].split(',')[1];
+      File fileToUpload = File(filePath);
+      print(filePath);
+
+      if (await fileToUpload.exists()) {
+        await supabase.storage.from('pulseapp').upload(
+          docs[i].split(',')[0], // fileName
+          fileToUpload, // fileToUpload
+          fileOptions: FileOptions(contentType: docs[i].split(',')[2]), // fileOptions
+        );
+
+      } else {
+        debugPrint('File not found: $filePath');
+      }
+    }
+  }
+
+
+
 
 
   @override
@@ -283,9 +356,10 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
                     if (widget.scheduleId == null) {
                       addSchedule();
                     } else {
-                      blockPastDates();
+                      updateSchedule();
+                      Navigator.pop(context);
+
                     }
-                    Navigator.pop(context);
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.transparent, // Save button color
@@ -302,17 +376,7 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
       ),
     );
   }
-  void blockPastDates() {
-    if (widget.scheduleDate.microsecondsSinceEpoch < DateTime.now().microsecondsSinceEpoch) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Cannot add schedule for past dates"),
-        ),
-      );
-    } else {
-      updateSchedule();
-    }
-  }
+
 
   Widget _buildTextField(String hint, IconData icon, Color color, TextEditingController controller) {
     return Container(
@@ -328,7 +392,7 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
           hintText: hint,
           hintStyle: const TextStyle(color: Colors.white54),
           border: InputBorder.none,
-          icon: Icon(icon, color: Colors.blueAccent),
+          icon: Icon(icon, color: Tcolor),
         ),
       ),
     );
@@ -396,21 +460,6 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
       ),
       child: Column(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('All Day', style: TextStyle(color: Colors.white)),
-              Switch(
-                value: isAllDay,
-                onChanged: (value) {
-                  setState(() {
-                    isAllDay = value;
-                  });
-                },
-                activeColor: Colors.blue,
-              ),
-            ],
-          ),
           const SizedBox(height: 10),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -638,7 +687,7 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
                   const SizedBox(height: 16),
                   _buildRadioTile(setState, "10 minutes before", "10m"),
                   _buildRadioTile(setState, "1 hour before", "1h"),
-                  _buildRadioTile(setState, "1 day before", "1d"),
+                  _buildRadioTile(setState, "5 hours before", "5h"),
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () {
