@@ -3,15 +3,14 @@
 import 'package:flutter/material.dart';
 import 'package:pulse/models/Schedules.dart';
 
+import '../ScheduleFormScreen.dart';
+
 class ScheduleCalenderScreen extends StatefulWidget {
 
-  final Function(String) onScheduleSelected;
   final String date;
-
   const ScheduleCalenderScreen(
       {super.key,
 
-      required this.onScheduleSelected,
       required this.date});
 
   @override
@@ -22,6 +21,10 @@ class _ScheduleCalenderScreenState extends State<ScheduleCalenderScreen> {
   final ScheduleService _scheduleService = ScheduleService();
   List<Schedule> _schedules = [];
   bool _isLoading = false;
+
+  void refreshSchedules() {
+    _fetchSchedules();
+  }
   
   @override
   void initState() {
@@ -70,7 +73,17 @@ class _ScheduleCalenderScreenState extends State<ScheduleCalenderScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: InkWell(
-                  onTap: () => widget.onScheduleSelected(schedule.scheduleId),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ScheduleFormScreen(
+                          scheduleId: schedule.scheduleId,
+                          scheduleDate: DateTime.parse(schedule.date),
+                        ),
+                      ),
+                    );
+                  },
                   borderRadius: BorderRadius.circular(12),
                   child: Row(
                     children: [
@@ -91,10 +104,29 @@ class _ScheduleCalenderScreenState extends State<ScheduleCalenderScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                schedule.title,
-                                style: TextStyle(color: Colors.white),
+
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    schedule.title,
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                  IconButton(
+                                    icon: Icon(Icons.delete, color: Colors.red),
+                                    alignment: Alignment.centerRight,
+                                    onPressed: () {
+                                      // Delete the Schedule
+                                      _scheduleService.deleteSchedule(schedule.scheduleId).then((_) {
+                                        refreshSchedules();
+                                      });
+
+                                    },
+                                  ),
+                                ],
                               ),
+
+
                             ],
                           ),
                         ),
