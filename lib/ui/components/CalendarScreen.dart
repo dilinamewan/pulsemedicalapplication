@@ -16,19 +16,6 @@ class CalendarScreenState extends State<CalendarScreen> {
 
 
 
-  void _onScheduleSelected(String scheduleId) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ScheduleFormScreen(
-
-          scheduleDate: _selectedDay,
-          scheduleId: scheduleId,
-        ),
-      ),
-    );
-  }
-
   void fabClick() {
 
     if (_selectedDay.microsecondsSinceEpoch < DateTime.now().microsecondsSinceEpoch) {
@@ -52,6 +39,7 @@ class CalendarScreenState extends State<CalendarScreen> {
   @override
   Widget build(BuildContext context) {
     return Container(
+
       color: Colors.black, // Sets the background to black
       child: Column(
         children: [
@@ -104,8 +92,6 @@ class CalendarScreenState extends State<CalendarScreen> {
           Flexible(
             fit: FlexFit.loose,
             child: ScheduleCalenderScreen(
-
-              onScheduleSelected: _onScheduleSelected,
               date: DateFormat('yyyy-MM-dd').format(_selectedDay),
             ),
           ),
