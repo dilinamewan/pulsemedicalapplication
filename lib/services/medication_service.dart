@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:pulse/models/medication.dart';
+import 'package:pulse/models/Medication.dart';
 import 'package:pulse/services/notification_service.dart';
 
 class MedicationService {

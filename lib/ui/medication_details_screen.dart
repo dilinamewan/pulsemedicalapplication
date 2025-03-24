@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:pulse/models/medication.dart';
+import 'package:pulse/models/Medication.dart';
 import 'package:pulse/services/medication_service.dart';
 import 'package:intl/intl.dart';
 
