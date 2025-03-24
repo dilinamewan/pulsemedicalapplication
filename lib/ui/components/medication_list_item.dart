@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pulse/models/medication.dart';
-import 'package:pulse/screens/medication_details_screen.dart';
+import 'package:pulse/ui/medication_details_screen.dart';
 import 'package:intl/intl.dart';
 
 class MedicationListItem extends StatelessWidget {

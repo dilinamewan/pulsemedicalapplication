@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:pulse/widgets/AppBarWidget.dart';
+import 'package:pulse/ui//components/AppBarWidget.dart';
 import 'package:pulse/ui/components/CalendarScreen.dart';
-import 'package:pulse/screens/MedicationHomeScreen.dart';
-import 'package:pulse/screens/add_medication_screen.dart';
+import 'package:pulse/ui/MedicationHomeScreen.dart';
+import 'package:pulse/ui/add_medication_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});

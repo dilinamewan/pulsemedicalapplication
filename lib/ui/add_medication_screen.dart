@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:pulse/models/medication.dart';
 import 'package:pulse/services/medication_service.dart';
-import 'package:pulse/widgets/reminder_time_picker.dart';
+import 'package:pulse/ui/components/reminder_time_picker.dart';
 
 class AddMedicationScreen extends StatefulWidget {
   const AddMedicationScreen({super.key});
