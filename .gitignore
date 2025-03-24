@@ -32,6 +32,7 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 /build/
+macos/
 
 # Symbolication related
 app.*.symbols
@@ -45,3 +46,4 @@ app.*.map.json
 /android/app/release
 
 *.env
+devtools_options.yaml
