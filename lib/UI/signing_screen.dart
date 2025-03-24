@@ -17,6 +17,101 @@ class SignInScreen extends StatefulWidget {
 class _SignInScreenState extends State<SignInScreen> {
   final TextEditingController _emailTextController = TextEditingController();
   final TextEditingController _passwordTextController = TextEditingController();
+  final GlobalKey<ScaffoldMessengerState> _scaffoldKey =
+      GlobalKey<ScaffoldMessengerState>();
+  final LocalAuthentication _localAuth = LocalAuthentication();
+  bool isPasswordType = true;
+  bool _rememberMe = false;
+  late SharedPreferences _prefs;
+  bool _canCheckBiometrics = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedCredentials().then((_) {
+      _checkBiometricSupport().then((_) {
+        // Automatically attempt biometric authentication after loading credentials
+        if (_canCheckBiometrics && _rememberMe) {
+          _authenticateWithBiometrics();
+        }
+      });
+    });
+  }
+
+  Future<void> _checkBiometricSupport() async {
+    try {
+      final bool canCheckBiometrics = await _localAuth.canCheckBiometrics;
+      final bool isDeviceSupported = await _localAuth.isDeviceSupported();
+      setState(() {
+        _canCheckBiometrics = canCheckBiometrics || isDeviceSupported;
+      });
+
+      if (!_canCheckBiometrics) {
+        _showErrorMessage('Biometrics not supported on this device');
+      }
+    } catch (e) {
+      _showErrorMessage('Error checking biometrics: $e');
+    }
+  }
+
+  Future<void> _loadSavedCredentials() async {
+    _prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _rememberMe = _prefs.getBool('rememberMe') ?? false;
+      if (_rememberMe) {
+        _emailTextController.text = _prefs.getString('email') ?? '';
+        _passwordTextController.text = _prefs.getString('password') ?? '';
+      }
+    });
+  }
+
+  Future<void> _saveCredentials() async {
+    if (_rememberMe) {
+      await _prefs.setString('email', _emailTextController.text);
+      await _prefs.setString('password', _passwordTextController.text);
+      await _prefs.setBool('rememberMe', true);
+    } else {
+      await _prefs.remove('email');
+      await _prefs.remove('password');
+      await _prefs.setBool('rememberMe', false);
+    }
+  }
+
+  Future<void> _authenticateWithBiometrics() async {
+    try {
+      String? savedEmail = _prefs.getString('email');
+      String? savedPassword = _prefs.getString('password');
+      if (savedEmail == null || savedPassword == null) {
+        _showErrorMessage('No saved credentials found. Please sign in first.');
+        return;
+      }
+
+      final bool didAuthenticate = await _localAuth.authenticate(
+        localizedReason: 'Please authenticate to sign in',
+        options: const AuthenticationOptions(
+          biometricOnly: true,
+          stickyAuth: true,
+          useErrorDialogs: true,
+        ),
+      );
+
+      if (didAuthenticate) {
+        await FirebaseAuth.instance.signInWithEmailAndPassword(
+          email: savedEmail,
+          password: savedPassword,
+        );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => HomeScreen()),
+        );
+      } else {
+        _showErrorMessage('Biometric authentication cancelled');
+      }
+    } catch (e) {
+      _showErrorMessage('Biometric authentication failed: $e');
+    }
+  }
+
   bool isPasswordType = true;
   bool _rememberMe = false;
 
@@ -76,10 +171,7 @@ class _SignInScreenState extends State<SignInScreen> {
         password: password,
       );
 
-      /// **Save User ID and credentials if Remember Me is checked**
       await saveUserCredentials();
-
-      /// **Navigate to Home Page**
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => HomeScreen()),
@@ -137,11 +229,78 @@ class _SignInScreenState extends State<SignInScreen> {
                   _emailTextController,
                 ),
                 SizedBox(height: 30),
-                reusableTextField(
-                  "Enter Password",
-                  Icons.lock_outline,
-                  isPasswordType,
-                  _passwordTextController,
+                TextField(
+                  controller: _passwordTextController,
+                  obscureText: isPasswordType,
+                  enableSuggestions: false,
+                  autocorrect: false,
+                  decoration: InputDecoration(
+                    labelText: "Enter Password",
+                    prefixIcon: Icon(Icons.lock_outline, color: Colors.black54),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        isPasswordType
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                        color: Colors.black54,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          isPasswordType = !isPasswordType;
+                        });
+                      },
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(color: Colors.black54),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(color: Colors.blue),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Checkbox(
+                          value: _rememberMe,
+                          activeColor: Colors.blue[900],
+                          onChanged: (bool? value) {
+                            setState(() {
+                              _rememberMe = value ?? false;
+                            });
+                          },
+                        ),
+                        Text(
+                          "Remember Me",
+                          style: TextStyle(color: Colors.black87),
+                        ),
+                      ],
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => ForgotPasswordScreen()),
+                        );
+                      },
+                      child: Text(
+                        "Forgot Password?",
+                        style: TextStyle(
+                          color: Colors.blue[900],
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 Row(
                   children: [
@@ -178,7 +337,7 @@ class _SignInScreenState extends State<SignInScreen> {
                 SizedBox(height: 20),
                 signInSignUpButton(context, true, _signIn),
                 SizedBox(height: 20),
-                signUpOption()
+                signUpOption(),
               ],
             ),
           ),
@@ -215,5 +374,12 @@ class _SignInScreenState extends State<SignInScreen> {
         ),
       ],
     );
+  }
+
+  @override
+  void dispose() {
+    _emailTextController.dispose();
+    _passwordTextController.dispose();
+    super.dispose();
   }
 }
