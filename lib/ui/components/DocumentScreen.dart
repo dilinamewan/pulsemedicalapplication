@@ -30,7 +30,6 @@ class DocumentScreen extends StatefulWidget {
 }
 
 class _DocumentScreenState extends State<DocumentScreen> {
-
   final SupabaseClient supabase = Supabase.instance.client;
   List<String> _uploadedFiles = []; // List to store uploaded file names
 

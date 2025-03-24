@@ -11,7 +11,6 @@ class NoteScreen extends StatefulWidget {
   final String scheduleId;
   final Function(String, String, List<String>?) onSave; // Callback function
 
-
   NoteScreen({
     Key? key,
     this.title,
