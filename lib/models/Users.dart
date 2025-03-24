@@ -1,23 +1,39 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 
 class User {
   User({
     required this.userId,
+    required this.name,
+    required this.email,
+    required this.phoneNumber,
+    required this.profileImageUrl,
+    required this.gender,
+
+
   });
 
   final String userId;
+  final String? name;
+  final String? email;
+  final String? phoneNumber;
+  final String? profileImageUrl;
+  final String? gender;
 }
 
 class UserService {
    final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   // Example of a method that fetches users
-   Future<List<User>> getUsers() async {
+   Future<List<User>> getUsers(String userId) async {
     List<User> users = [];
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? UserId = prefs.getString('user_id');
 
     try {
       // Query 'users' collection
-      QuerySnapshot querySnapshot = await _firestore.collection('users').get();
+      QuerySnapshot querySnapshot = await _firestore.collection('users').where("uid",isEqualTo:UserId).get();
 
       // Iterate over the results and build 'User' objects
       for (var doc in querySnapshot.docs) {
@@ -25,7 +41,14 @@ class UserService {
 
         users.add(
           User(
-            userId: doc.id, // user document ID
+            userId: doc.id,
+            name: data['fullName'],
+            email: data['email'],
+            phoneNumber: data['phoneNumber'],
+            profileImageUrl: data['pp_url'],
+            gender: data['gender'],
+
+
           ),
         );
       }

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Schedule {
   Schedule({
@@ -11,6 +12,8 @@ class Schedule {
     required this.location,
     required this.alert,
     required this.color,
+    required this.notes,
+    required this.documents,
   });
 
   final String scheduleId;
@@ -21,19 +24,23 @@ class Schedule {
   final GeoPoint location;
   final String alert;
   final String color;
+  Map<String, dynamic> notes = {};
+  List<String> documents = [];
 }
 
 class ScheduleService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   /// Fetch schedules for a specific user and date
-  Future<List<Schedule>> getSchedule(String userId, String date) async {
+  Future<List<Schedule>> getSchedule(String date) async {
     List<Schedule> schedules = [];
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? UserId = prefs.getString('user_id');
 
     try {
       QuerySnapshot querySnapshot = await _firestore
           .collection('users')
-          .doc(userId)
+          .doc(UserId)
           .collection('schedules')
           .where('date', isEqualTo: date)
           .get();
@@ -51,9 +58,13 @@ class ScheduleService {
               endTime: data['end_time'] ?? '00:00',
               location: data['location'] is GeoPoint
                   ? data['location'] as GeoPoint
-                  : const GeoPoint(0.0, 0.0), // Ensure valid GeoPoint
+                  : const GeoPoint(0.0, 0.0),
               alert: data['alert_frequency'] ?? 'No Alert',
               color: data['color'] ?? '#FF000000',
+              notes: data['note'] ?? {},
+              documents: data['docs'] != null
+                  ? List<String>.from(data['docs'])
+                  : [],
             ),
           );
         }
@@ -67,9 +78,11 @@ class ScheduleService {
 
   /// Add a new schedule
   Future<void> addSchedule(
-      String userId, String title, String date, String startTime, String endTime, GeoPoint location, String alert, String color) async {
+      String title, String date, String startTime, String endTime, GeoPoint location, String alert, String color, Map notes, List docs) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? UserId = prefs.getString('user_id');
     try {
-      await _firestore.collection('users').doc(userId).collection('schedules').add({
+      await _firestore.collection('users').doc(UserId).collection('schedules').add({
         'title': title,
         'date': date,
         'start_time': startTime,
@@ -77,7 +90,8 @@ class ScheduleService {
         'location': location,
         'alert_frequency': alert,
         'color': color,
-        'createdAt': FieldValue.serverTimestamp(),
+        'note': notes,
+        'docs': docs,
       });
 
       debugPrint('Schedule added successfully');
@@ -88,9 +102,11 @@ class ScheduleService {
 
   /// Update an existing schedule
   Future<void> updateSchedule(
-      String userId, String scheduleId, String title, String date, String startTime, String endTime, GeoPoint location, String alert, String color) async {
+       String scheduleId, String title, String date, String startTime, String endTime, GeoPoint location, String alert, String color, Map notes, List docs) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? UserId = prefs.getString('user_id');
     try {
-      await _firestore.collection('users').doc(userId).collection('schedules').doc(scheduleId).update({
+      await _firestore.collection('users').doc(UserId).collection('schedules').doc(scheduleId).update({
         'title': title,
         'date': date,
         'start_time': startTime,
@@ -98,6 +114,8 @@ class ScheduleService {
         'location': location,
         'alert_frequency': alert,
         'color': color,
+        'note': notes,
+        'docs': docs,
         'updatedAt': FieldValue.serverTimestamp(),
       });
 
@@ -108,13 +126,16 @@ class ScheduleService {
   }
 
   /// Delete a schedule
-  Future<void> deleteSchedule(String userId, String scheduleId) async {
+  Future<void> deleteSchedule(String scheduleId) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? UserId = prefs.getString('user_id');
     try {
-      await _firestore.collection('users').doc(userId).collection('schedules').doc(scheduleId).delete();
+      await _firestore.collection('users').doc(UserId).collection('schedules').doc(scheduleId).delete();
 
       debugPrint('Schedule deleted successfully');
     } catch (e) {
       debugPrint('Error deleting schedule: $e');
     }
   }
+
 }

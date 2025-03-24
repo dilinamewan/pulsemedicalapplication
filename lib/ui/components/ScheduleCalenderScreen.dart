@@ -1,15 +1,16 @@
+
+
 import 'package:flutter/material.dart';
 import 'package:pulse/models/Schedules.dart';
 
-class ScheduleCalenderScreen extends StatefulWidget {
-  final String userId;
-  final Function(String) onScheduleSelected;
-  final String date;
+import '../ScheduleFormScreen.dart';
 
+class ScheduleCalenderScreen extends StatefulWidget {
+
+  final String date;
   const ScheduleCalenderScreen(
       {super.key,
-      required this.userId,
-      required this.onScheduleSelected,
+
       required this.date});
 
   @override
@@ -20,6 +21,10 @@ class _ScheduleCalenderScreenState extends State<ScheduleCalenderScreen> {
   final ScheduleService _scheduleService = ScheduleService();
   List<Schedule> _schedules = [];
   bool _isLoading = false;
+
+  void refreshSchedules() {
+    _fetchSchedules();
+  }
   
   @override
   void initState() {
@@ -34,14 +39,14 @@ class _ScheduleCalenderScreenState extends State<ScheduleCalenderScreen> {
       _fetchSchedules();
     }
   }
-  
+
   void _fetchSchedules() async {
     setState(() {
       _isLoading = true;
     });
     List<Schedule> schedules =
-        await _scheduleService.getSchedule(widget.userId, widget.date);
-    
+        await _scheduleService.getSchedule(widget.date);
+
     setState(() {
       _schedules = schedules;
       _isLoading = false;
@@ -68,7 +73,17 @@ class _ScheduleCalenderScreenState extends State<ScheduleCalenderScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: InkWell(
-                  onTap: () => widget.onScheduleSelected(schedule.scheduleId),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ScheduleFormScreen(
+                          scheduleId: schedule.scheduleId,
+                          scheduleDate: DateTime.parse(schedule.date),
+                        ),
+                      ),
+                    );
+                  },
                   borderRadius: BorderRadius.circular(12),
                   child: Row(
                     children: [
@@ -89,10 +104,29 @@ class _ScheduleCalenderScreenState extends State<ScheduleCalenderScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                'Appointment Reminder: "${schedule.title}"',
-                                style: TextStyle(color: Colors.white),
+
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    schedule.title,
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                  IconButton(
+                                    icon: Icon(Icons.delete, color: Colors.red),
+                                    alignment: Alignment.centerRight,
+                                    onPressed: () {
+                                      // Delete the Schedule
+                                      _scheduleService.deleteSchedule(schedule.scheduleId).then((_) {
+                                        refreshSchedules();
+                                      });
+
+                                    },
+                                  ),
+                                ],
                               ),
+
+
                             ],
                           ),
                         ),

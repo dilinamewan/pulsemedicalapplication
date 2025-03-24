@@ -1,40 +1,61 @@
 import 'package:flutter/material.dart';
-import 'package:pulse/ui/components/documentscreen.dart'; // Import the DocumentScreen
-import 'package:pulse/models/Notes.dart';
+import 'package:pulse/ui/components/documentscreen.dart';
+import 'package:pulse/ui/components/documentscreen.dart' show DocumentScreen;
+
+
 
 class NoteScreen extends StatefulWidget {
-  final String userId;
+  final String? title;
+  final String? content;
+  List<String>? docs;
   final String scheduleId;
-  final Function(String) onNoteSelected;
+  final Function(String, String, List<String>?) onSave; // Callback function
 
-  const NoteScreen({
-    super.key,
-    required this.userId,
+  NoteScreen({
+    Key? key,
+    this.title,
+    this.content,
+    this.docs,
     required this.scheduleId,
-    required this.onNoteSelected,
-  });
+    required this.onSave, // Receive the function
+  }) : super(key: key);
 
   @override
   _NoteScreenState createState() => _NoteScreenState();
 }
 
 class _NoteScreenState extends State<NoteScreen> {
-  final List<String> _uploadedFiles = []; // Track uploaded files
-final NoteService _noteService = NoteService();
-  List<Note> _notes = [];
+
+  TextEditingController _titleController = TextEditingController();
+  TextEditingController _contentController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _fetchNotes();
+    if (widget.scheduleId.isNotEmpty) {
+      _fetchNotes();
+    }else
+      setValues();
+  }
+  void setValues(){
+    _titleController.text = widget.title ?? "";
+    _contentController.text = widget.content ?? "";
+
+  }
+  void _fetchNotes() async {
+    _titleController.text = widget.title ?? "";
+    _contentController.text = widget.content ?? "";
   }
 
-  void _fetchNotes() async {
-    List<Note> notes = await _noteService.getNotes(widget.scheduleId, widget.userId);
-    setState(() {
-      _notes = notes;
-    });
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _contentController.dispose();
+
+    super.dispose();
   }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -44,11 +65,10 @@ final NoteService _noteService = NoteService();
         padding: const EdgeInsets.all(40.0),
         child: Column(
           children: [
-            // Title: Add Note
             Align(
               alignment: Alignment.center,
               child: Text(
-                "Add Note",
+                "Edit Note",
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 14,
@@ -57,8 +77,6 @@ final NoteService _noteService = NoteService();
               ),
             ),
             SizedBox(height: 20),
-
-            // Note Input Box
             Expanded(
               child: Container(
                 padding: EdgeInsets.all(12),
@@ -69,6 +87,7 @@ final NoteService _noteService = NoteService();
                 child: Column(
                   children: [
                     TextField(
+                      controller: _titleController,
                       style: TextStyle(color: Colors.white),
                       decoration: InputDecoration(
                         hintText: "Title",
@@ -81,6 +100,7 @@ final NoteService _noteService = NoteService();
                     SizedBox(height: 10),
                     Expanded(
                       child: TextField(
+                        controller: _contentController,
                         style: TextStyle(color: Colors.white),
                         maxLines: null,
                         decoration: InputDecoration(
@@ -95,12 +115,10 @@ final NoteService _noteService = NoteService();
               ),
             ),
             SizedBox(height: 40),
-
-            // Title: Add Attachments
             Align(
               alignment: Alignment.center,
               child: Text(
-                "Add Attachments",
+                "Attachments",
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 14,
@@ -109,19 +127,59 @@ final NoteService _noteService = NoteService();
               ),
             ),
             SizedBox(height: 10),
-
-            // Embed DocumentScreen with reduced height
             SizedBox(
-              height: 150, // Reduced height
+              height: 150,
               child: DocumentScreen(
-                key: ValueKey(_uploadedFiles), // Force rebuild when state changes
-                userId: widget.userId,
+                docs: widget.docs ?? [], // Ensure it's not null
                 scheduleId: widget.scheduleId,
-                noteId: "noteId", // Replace with the actual noteId if available
-              ),
+                  onDocsUpdated: (updatedDocs) {
+                    if (mounted) {
+                      setState(() {
+                        widget.docs = List.from(updatedDocs ?? []);
+                      });
+                    }
+                  },
+              )
+
+            ),
+            //const Spacer(), // Pushes buttons to the bottom
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context); // Closes the screen
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent, // Cancel button color
+                    padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+                  ),
+                  child: const Text("Cancel", style: TextStyle(color: Colors.white)),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    // Call onSave with updated docs list
+                    widget.onSave(
+                      _titleController.text,
+                      _contentController.text,
+                      List.from(widget.docs ?? []), // Ensure list is not null
+                    );
+
+                    Navigator.pop(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+                  ),
+                  child: const Text("Save", style: TextStyle(color: Colors.white)),
+                ),
+
+
+              ],
             ),
 
-            SizedBox(height: 20), // Space for Bottom Nav Bar
+            SizedBox(height: 20),
+
           ],
         ),
       ),

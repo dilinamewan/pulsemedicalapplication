@@ -13,22 +13,33 @@ class CalendarScreen extends StatefulWidget {
 
 class CalendarScreenState extends State<CalendarScreen> {
   DateTime _selectedDay = DateTime.now();
-  final String userId = "ir4cVfO1ASPuTiHpMammsQLnU8t2";
 
-  void _onScheduleSelected(String scheduleId) {}
+
 
   void fabClick() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ScheduleFormScreen(userId: userId, scheduleDate: _selectedDay),
-      ),
-    );
+
+    if (_selectedDay.microsecondsSinceEpoch < DateTime.now().microsecondsSinceEpoch) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Cannot add schedule for past dates"),
+        ),
+      );
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ScheduleFormScreen(
+            scheduleDate: _selectedDay,
+          ),
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
+
       color: Colors.black, // Sets the background to black
       child: Column(
         children: [
@@ -81,8 +92,6 @@ class CalendarScreenState extends State<CalendarScreen> {
           Flexible(
             fit: FlexFit.loose,
             child: ScheduleCalenderScreen(
-              userId: userId,
-              onScheduleSelected: _onScheduleSelected,
               date: DateFormat('yyyy-MM-dd').format(_selectedDay),
             ),
           ),
