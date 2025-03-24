@@ -12,7 +12,7 @@ import 'package:pulse/models/Hospitals.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'components/CalendarScreen.dart';
-
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 
 class ScheduleFormScreen extends StatefulWidget {
   final DateTime scheduleDate;
@@ -29,7 +29,8 @@ class ScheduleFormScreen extends StatefulWidget {
 }
 
 class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
-  final GlobalKey<CalendarScreenState> _calendarKey = GlobalKey<CalendarScreenState>();
+  final GlobalKey<CalendarScreenState> _calendarKey =
+      GlobalKey<CalendarScreenState>();
   final SupabaseClient supabase = Supabase.instance.client;
   TimeOfDay startTime = TimeOfDay.now();
   TimeOfDay endTime = TimeOfDay.now();
@@ -39,7 +40,7 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
   List<dynamic> hospitalData = [];
   Map<String, dynamic> notes = {};
   List<String> docs = [];
-  List<String> docFile=[];
+  List<String> docFile = [];
   Color? Tcolor;
   @override
   void initState() {
@@ -54,6 +55,7 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
     titleController.dispose();
     super.dispose();
   }
+
   Future<void> fetchHospitals() async {
     try {
       // Create an instance of HospitalService
@@ -68,8 +70,7 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
     } catch (e) {
       debugPrint('Error fetching hospital details: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load hospital details: $e'))
-      );
+          SnackBar(content: Text('Failed to load hospital details: $e')));
     }
   }
 
@@ -78,18 +79,19 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
 
     try {
       // Format the date to match the format used in the database
-      String formattedDate = "${widget.scheduleDate.year}-${widget.scheduleDate.month.toString().padLeft(2, '0')}-${widget.scheduleDate.day.toString().padLeft(2, '0')}";
+      String formattedDate =
+          "${widget.scheduleDate.year}-${widget.scheduleDate.month.toString().padLeft(2, '0')}-${widget.scheduleDate.day.toString().padLeft(2, '0')}";
 
       // Create an instance of ScheduleService
       ScheduleService scheduleService = ScheduleService();
 
       // Fetch all schedules for this date
-      List<Schedule> schedules = await scheduleService.getSchedule(formattedDate);
+      List<Schedule> schedules =
+          await scheduleService.getSchedule(formattedDate);
 
       // Find the schedule with the matching ID
       Schedule? schedule = schedules.firstWhere(
-            (s) => s.scheduleId == widget.scheduleId,
-
+        (s) => s.scheduleId == widget.scheduleId,
         orElse: () => throw Exception('Schedule not found'),
       );
       TimeOfDay parseTimeOfDay(String timeString) {
@@ -121,13 +123,9 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
       try {
         startTime = parseTimeOfDay(schedule.startTime);
         endTime = parseTimeOfDay(schedule.endTime);
-
-
       } catch (e) {
         debugPrint('Error parsing time: $e');
       }
-
-
 
       // Update the form fields with the schedule details
       setState(() {
@@ -136,34 +134,28 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
         location = schedule.location;
         notes = schedule.notes!;
         docs = schedule.documents!;
-        docFile=schedule.documents!;
+        docFile = schedule.documents!;
         Tcolor = Color(int.parse(schedule.color));
 
         // Parse the start time
         List<String> startParts = schedule.startTime.split(':');
         if (startParts.length == 2) {
           startTime = TimeOfDay(
-              hour: int.parse(startParts[0]),
-              minute: int.parse(startParts[1])
-          );
+              hour: int.parse(startParts[0]), minute: int.parse(startParts[1]));
         }
 
         // Parse the end time
         List<String> endParts = schedule.endTime.split(':');
         if (endParts.length == 2) {
           endTime = TimeOfDay(
-              hour: int.parse(endParts[0]),
-              minute: int.parse(endParts[1])
-          );
+              hour: int.parse(endParts[0]), minute: int.parse(endParts[1]));
         }
-
       });
     } catch (e) {
       // Handle any errors that might occur during fetching
       debugPrint('Error fetching schedule details: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load schedule details: $e'))
-      );
+          SnackBar(content: Text('Failed to load schedule details: $e')));
     }
   }
 
@@ -176,7 +168,8 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
       );
     }
     if (title.isNotEmpty) {
-      String formattedDate = "${widget.scheduleDate.year}-${widget.scheduleDate.month.toString().padLeft(2, '0')}-${widget.scheduleDate.day.toString().padLeft(2, '0')}";
+      String formattedDate =
+          "${widget.scheduleDate.year}-${widget.scheduleDate.month.toString().padLeft(2, '0')}-${widget.scheduleDate.day.toString().padLeft(2, '0')}";
 
       ScheduleService scheduleService = ScheduleService();
 
@@ -185,10 +178,12 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
         formattedDate,
         "${startTime.hour}:${startTime.minute}",
         "${endTime.hour}:${endTime.minute}",
-        location?? GeoPoint(0.0, 0.0),
+        location ?? GeoPoint(0.0, 0.0),
         alerts ?? '10m',
-        '0xFFFF0000',
-        notes?? {},
+        Tcolor != null
+            ? '0x${Tcolor!.value.toRadixString(16).toUpperCase()}'
+            : '0xFFFF0000',
+        notes ?? {},
         docs,
       );
 
@@ -197,24 +192,8 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Schedule added successfully')),
       );
-
     }
 
-    String formattedDate = "${widget.scheduleDate.year}-${widget.scheduleDate.month.toString().padLeft(2, '0')}-${widget.scheduleDate.day.toString().padLeft(2, '0')}";
-
-    ScheduleService scheduleService = ScheduleService();
-
-    await scheduleService.addSchedule(
-      title,
-      formattedDate,
-      "${startTime.hour}:${startTime.minute}",
-      "${endTime.hour}:${endTime.minute}",
-      location?? GeoPoint(0.0, 0.0),
-      alerts ?? '10m',
-      '0xFFFF0000',
-      notes?? {},
-      docs,
-    );
     // Navigate back to the previous screen
     Navigator.pop(context);
 
@@ -222,14 +201,11 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Schedule added successfully')),
     );
-
   }
-
 
   Future<void> updateSchedule() async {
     // Get the title from the text field
     String title = titleController.text.trim();
-
 
     // Validate the title
     if (title.isEmpty) {
@@ -240,29 +216,30 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
     }
 
     // Format the date to match the format used in the database
-    String formattedDate = "${widget.scheduleDate.year}-${widget.scheduleDate.month.toString().padLeft(2, '0')}-${widget.scheduleDate.day.toString().padLeft(2, '0')}";
+    String formattedDate =
+        "${widget.scheduleDate.year}-${widget.scheduleDate.month.toString().padLeft(2, '0')}-${widget.scheduleDate.day.toString().padLeft(2, '0')}";
 
     // Create an instance of ScheduleService
     ScheduleService scheduleService = ScheduleService();
     for (var i = 0; i < docs.length; i++) {
       for (var j = 0; j < docFile.length; j++) {
         if (docs[i] != docFile[j]) {
-          await supabase.storage.from('pulseapp').remove([docFile[j].split(',')[0]]);
+          await supabase.storage
+              .from('pulseapp')
+              .remove([docFile[j].split(',')[0]]);
         }
       }
-
-
     }
     if (docs.isEmpty) {
-
       await supabase.storage.from('pulseapp').remove([widget.scheduleId!]);
-      final response = await supabase.storage.from('pulseapp').list(
-          path: widget.scheduleId!);
+      final response = await supabase.storage
+          .from('pulseapp')
+          .list(path: widget.scheduleId!);
       String fileName = response.first.name;
-      await supabase.storage.from('pulseapp').remove(
-          ['${widget.scheduleId!}/$fileName']);
+      await supabase.storage
+          .from('pulseapp')
+          .remove(['${widget.scheduleId!}/$fileName']);
     }
-
 
     // Update the schedule in the database
     await scheduleService.updateSchedule(
@@ -271,10 +248,12 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
       formattedDate,
       "${startTime.hour}:${startTime.minute}",
       "${endTime.hour}:${endTime.minute}",
-      location?? GeoPoint(0.0, 0.0),
+      location ?? GeoPoint(0.0, 0.0),
       alerts ?? '10m',
-      '0xFFFF0000',
-      notes?? {},
+      Tcolor != null
+          ? '0x${Tcolor!.value.toRadixString(16).toUpperCase()}'
+          : '0xFFFF0000',
+      notes ?? {},
       docs,
     );
 
@@ -283,8 +262,8 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Schedule updated successfully')),
     );
-
   }
+
   Future<void> uploadFile() async {
     for (var i = 0; i < docs.length; i++) {
       String filePath = docs[i].split(',')[1];
@@ -293,20 +272,16 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
 
       if (await fileToUpload.exists()) {
         await supabase.storage.from('pulseapp').upload(
-          docs[i].split(',')[0], // fileName
-          fileToUpload, // fileToUpload
-          fileOptions: FileOptions(contentType: docs[i].split(',')[2]), // fileOptions
-        );
-
+              docs[i].split(',')[0], // fileName
+              fileToUpload, // fileToUpload
+              fileOptions: FileOptions(
+                  contentType: docs[i].split(',')[2]), // fileOptions
+            );
       } else {
         debugPrint('File not found: $filePath');
       }
     }
   }
-
-
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -330,7 +305,8 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            _buildTextField('Title', Icons.circle, Colors.grey[800]!, titleController),
+            _buildTextField(
+                'Title', Icons.circle, Colors.grey[800]!, titleController),
             const SizedBox(height: 20),
             _buildTimePickerCard(),
             const SizedBox(height: 20),
@@ -347,9 +323,11 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.transparent, // Cancel button color
-                    padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 30, vertical: 12),
                   ),
-                  child: const Text("Cancel", style: TextStyle(color: Colors.white)),
+                  child: const Text("Cancel",
+                      style: TextStyle(color: Colors.white)),
                 ),
                 ElevatedButton(
                   onPressed: () {
@@ -358,15 +336,15 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
                     } else {
                       updateSchedule();
                       Navigator.pop(context);
-
                     }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.transparent, // Save button color
-                    padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 30, vertical: 12),
                   ),
-                  child: const Text("Save", style: TextStyle(color: Colors.white)),
-
+                  child:
+                      const Text("Save", style: TextStyle(color: Colors.white)),
                 ),
               ],
             ),
@@ -377,8 +355,8 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
     );
   }
 
-
-  Widget _buildTextField(String hint, IconData icon, Color color, TextEditingController controller) {
+  Widget _buildTextField(String hint, IconData icon, Color color,
+      TextEditingController controller) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
@@ -392,15 +370,46 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
           hintText: hint,
           hintStyle: const TextStyle(color: Colors.white54),
           border: InputBorder.none,
-          icon: Icon(icon, color: Tcolor),
+          icon: GestureDetector(
+            onTap: () {
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: const Text('Pick a color'),
+                    content: SingleChildScrollView(
+                      child: ColorPicker(
+                        pickerColor: Tcolor ?? Colors.red,
+                        onColorChanged: (Color color) {
+                          setState(() {
+                            Tcolor = color;
+                          });
+                        },
+                        pickerAreaHeightPercent: 0.8,
+                      ),
+                    ),
+                    actions: <Widget>[
+                      TextButton(
+                        child: const Text('OK'),
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
+            child: Icon(icon, color: Tcolor ?? Colors.red),
+          ),
         ),
       ),
     );
   }
+
   Widget _buildOptionNote(String title, IconData icon) {
     return GestureDetector(
       onTap: () {
-
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -419,16 +428,14 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
             ),
           ),
         );
-
       },
       child: _buildOptionTile(title, icon),
     );
   }
-  Widget _buildOptionTile(String title, IconData icon) {
 
-    return
-      GestureDetector(
-        child: Container(
+  Widget _buildOptionTile(String title, IconData icon) {
+    return GestureDetector(
+      child: Container(
         margin: const EdgeInsets.only(top: 10),
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         decoration: BoxDecoration(
@@ -445,12 +452,14 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
                 style: const TextStyle(color: Colors.white),
               ),
             ),
-            const Icon(Icons.arrow_forward_ios, color: Colors.white54, size: 16),
+            const Icon(Icons.arrow_forward_ios,
+                color: Colors.white54, size: 16),
           ],
         ),
       ),
-      );
+    );
   }
+
   Widget _buildTimePickerCard() {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -481,7 +490,8 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
     );
   }
 
-  Widget _buildTimeColumn(String label, TimeOfDay time, Function(TimeOfDay) onTimeSelected) {
+  Widget _buildTimeColumn(
+      String label, TimeOfDay time, Function(TimeOfDay) onTimeSelected) {
     return Column(
       children: [
         Text(label, style: const TextStyle(color: Colors.white54)),
@@ -513,50 +523,14 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
   }
 
   Widget _buildOptionTileLocation(String title, IconData icon) {
-
-    return
-      GestureDetector(
-        onTap: () {
-
-
-            if(widget.scheduleId == null) {
-              fetchHospitals();
-              _showHospitalOverlay();
-            } else {
-
-            _showViewUpdateOverlay();
-          }
-
-
-    },child: Container(
-      margin: const EdgeInsets.only(top: 10),
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.grey[900],
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: Colors.white54),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              title,
-              style: const TextStyle(color: Colors.white),
-            ),
-          ),
-          const Icon(Icons.arrow_forward_ios, color: Colors.white54, size: 16),
-        ],
-      ),
-      ),
-    );
-  }
-  Widget _buildOptionTileAlert(String title, IconData icon) {
     return GestureDetector(
       onTap: () {
-
-          _showAlertOverlay();
-
+        if (widget.scheduleId == null) {
+          fetchHospitals();
+          _showHospitalOverlay();
+        } else {
+          _showViewUpdateOverlay();
+        }
       },
       child: Container(
         margin: const EdgeInsets.only(top: 10),
@@ -575,12 +549,44 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
                 style: const TextStyle(color: Colors.white),
               ),
             ),
-            const Icon(Icons.arrow_forward_ios, color: Colors.white54, size: 16),
+            const Icon(Icons.arrow_forward_ios,
+                color: Colors.white54, size: 16),
           ],
         ),
       ),
     );
   }
+
+  Widget _buildOptionTileAlert(String title, IconData icon) {
+    return GestureDetector(
+      onTap: () {
+        _showAlertOverlay();
+      },
+      child: Container(
+        margin: const EdgeInsets.only(top: 10),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        decoration: BoxDecoration(
+          color: Colors.grey[900],
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: Colors.white54),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(color: Colors.white),
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios,
+                color: Colors.white54, size: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _showViewUpdateOverlay() {
     showModalBottomSheet(
       context: context,
@@ -598,7 +604,10 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
                 children: [
                   const Text(
                     "View or Update",
-                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 16),
 
@@ -620,9 +629,11 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
                           const Icon(Icons.map, color: Colors.blueAccent),
                           const SizedBox(width: 10),
                           const Expanded(
-                            child: Text("View Location", style: TextStyle(color: Colors.white)),
+                            child: Text("View Location",
+                                style: TextStyle(color: Colors.white)),
                           ),
-                          const Icon(Icons.arrow_forward_ios, color: Colors.white54, size: 16),
+                          const Icon(Icons.arrow_forward_ios,
+                              color: Colors.white54, size: 16),
                         ],
                       ),
                     ),
@@ -641,15 +652,17 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
                         color: Colors.grey[800],
                         borderRadius: BorderRadius.circular(10),
                       ),
-
                       child: Row(
                         children: [
-                          const Icon(Icons.local_hospital, color: Colors.redAccent),
+                          const Icon(Icons.local_hospital,
+                              color: Colors.redAccent),
                           const SizedBox(width: 10),
                           const Expanded(
-                            child: Text("Update Location", style: TextStyle(color: Colors.white)),
+                            child: Text("Update Location",
+                                style: TextStyle(color: Colors.white)),
                           ),
-                          const Icon(Icons.arrow_forward_ios, color: Colors.white54, size: 16),
+                          const Icon(Icons.arrow_forward_ios,
+                              color: Colors.white54, size: 16),
                         ],
                       ),
                     ),
@@ -662,8 +675,6 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
       },
     );
   }
-
-
 
   void _showAlertOverlay() {
     showModalBottomSheet(
@@ -682,7 +693,10 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
                 children: [
                   const Text(
                     "Set Alert Time",
-                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 16),
                   _buildRadioTile(setState, "10 minutes before", "10m"),
@@ -703,6 +717,7 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
       },
     );
   }
+
   void _showHospitalOverlay() {
     showModalBottomSheet(
       context: context,
@@ -720,7 +735,10 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
                 children: [
                   const Text(
                     "Select Hospital",
-                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 16),
                   Expanded(
@@ -730,7 +748,8 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
                       itemBuilder: (context, index) {
                         var hospital = hospitalData[index];
                         return ListTile(
-                          title: Text(hospital.name, style: const TextStyle(color: Colors.white)),
+                          title: Text(hospital.name,
+                              style: const TextStyle(color: Colors.white)),
                           onTap: () {
                             setState(() {
                               location = hospital.location;
@@ -759,7 +778,6 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
 
   // Default alert selection
 
-
   Widget _buildRadioTile(StateSetter setState, String label, String value) {
     return RadioListTile<String>(
       title: Text(label, style: const TextStyle(color: Colors.white)),
@@ -781,7 +799,8 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
     final double lat = location!.latitude;
     final double lng = location!.longitude;
     final String googleMapsUrl = "geo:$lat,$lng?q=$lat,$lng";
-    final String webUrl = "https://www.google.com/maps/search/?api=1&query=$lat,$lng";
+    final String webUrl =
+        "https://www.google.com/maps/search/?api=1&query=$lat,$lng";
 
     if (await canLaunchUrl(Uri.parse(googleMapsUrl))) {
       await launchUrl(Uri.parse(googleMapsUrl));

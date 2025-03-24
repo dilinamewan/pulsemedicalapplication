@@ -36,6 +36,7 @@ dependencies:
   mime_type: ^1.0.1
   open_filex: ^4.7.0
   workmanager: ^0.5.2
+  flutter_colorpicker: ^1.1.0
 
 dev_dependencies:
   flutter_test:
