@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:pulse/ui/component/reusable_widget.dart';
-import '../utils/color_utils.dart';
-import 'home.dart';
+import 'package:pulse/ui/components/reusable_widget.dart';
+import 'package:pulse/utils/color_utils.dart';
 import 'package:pulse/ui/signing_screen.dart';
 
 class SignupScreen extends StatefulWidget {
-  const SignupScreen({Key? key}) : super(key: key);
+  const SignupScreen({super.key});
 
   @override
   _SignupScreenState createState() => _SignupScreenState();

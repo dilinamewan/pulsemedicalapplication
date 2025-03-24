@@ -15,7 +15,6 @@ Future<void> main() async {
     // Initialize notifications
     final notificationService = NotificationService();
     await notificationService.initNotifications();
-
     // Load .env configuration
     await dotenv.load(fileName: ".env");
     await Supabase.initialize(
@@ -48,3 +47,4 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
