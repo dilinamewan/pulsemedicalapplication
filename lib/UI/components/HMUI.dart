@@ -4,14 +4,14 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:pulse/ui/AddHMUI.dart';
 
 
-class MainScreen extends StatefulWidget {
-  const MainScreen({Key? key}) : super(key: key);
+class HMUIScreen extends StatefulWidget {
+  const HMUIScreen({Key? key}) : super(key: key);
 
   @override
-  _MainScreenState createState() => _MainScreenState();
+  _HMUIScreenState createState() => _HMUIScreenState();
 }
 
-class _MainScreenState extends State<MainScreen> {
+class _HMUIScreenState extends State<HMUIScreen> {
   int _selectedIndex = 0;
 
   static final List<Widget> _screens = [

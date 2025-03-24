@@ -6,7 +6,7 @@ import 'dart:io';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:pulse/ui/signing_screen.dart';
-import 'package:pulse/ui/component/reusable_widget.dart';
+import 'package:pulse/ui/components/reusable_widget.dart';
 import '../utils/color_utils.dart';
 
 class ProfileScreen extends StatefulWidget {

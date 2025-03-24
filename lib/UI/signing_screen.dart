@@ -6,6 +6,7 @@ import 'package:pulse/utils/color_utils.dart';
 import 'package:pulse/ui/home.dart';
 import 'package:pulse/ui/signup_screen.dart';
 import 'package:pulse/ui/forgot_password_screen.dart';
+import 'package:local_auth/local_auth.dart';
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});
@@ -110,15 +111,6 @@ class _SignInScreenState extends State<SignInScreen> {
     } catch (e) {
       _showErrorMessage('Biometric authentication failed: $e');
     }
-  }
-
-  bool isPasswordType = true;
-  bool _rememberMe = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadRememberedUser();
   }
 
   /// **Load saved credentials if Remember Me is checked**
