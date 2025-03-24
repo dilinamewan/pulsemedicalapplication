@@ -1,5 +1,4 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-
 import 'ui/signing_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -16,7 +15,6 @@ Future<void> main() async {
     // Initialize notifications
     final notificationService = NotificationService();
     await notificationService.initNotifications();
-
     // Load .env configuration
     await dotenv.load(fileName: ".env");
     await Supabase.initialize(
@@ -49,3 +47,4 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+

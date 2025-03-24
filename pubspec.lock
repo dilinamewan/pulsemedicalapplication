@@ -61,10 +61,10 @@ packages:
     dependency: transitive
     description:
       name: args
-      sha256: bf9f5caeea8d8fe6721a9c358dd8a5c1947b27f1cfaa18b39c301273594919e6
+      sha256: d0481093c50b1da8910eb0bb301626d4d8eb7284aa739614d2b394ee09e3ea04
       url: "https://pub.dev"
     source: hosted
-    version: "2.6.0"
+    version: "2.7.0"
   async:
     dependency: transitive
     description:
@@ -468,6 +468,22 @@ packages:
   firebase_vertexai:
     dependency: transitive
     description:
+      name: firebase_storage_platform_interface
+      sha256: a32eaf283962d4249fa70c3f60efe8657fc75d4e1beaea517c4af61a14b0ba6b
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.2.2"
+  firebase_storage_web:
+    dependency: transitive
+    description:
+      name: firebase_storage_web
+      sha256: "3969d79a085b7b2c226fe79b1673ac7155d3064657a1bf07783db0b67b189da2"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.10.9"
+  firebase_vertexai:
+    dependency: "direct main"
+    description:
       name: firebase_vertexai
       sha256: "2db8b3e028844ef6e7bb54a9246f8887aa4dd8fffb578abd10d53d9f34ca208d"
       url: "https://pub.dev"
@@ -697,7 +713,7 @@ packages:
     source: hosted
     version: "0.15.5"
   http:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: http
       sha256: fe7ab022b76f3034adc518fb6ea04a82387620e19977665ea18d30a1cf43442f
@@ -840,6 +856,46 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "5.1.1"
+  local_auth:
+    dependency: "direct main"
+    description:
+      name: local_auth
+      sha256: "434d854cf478f17f12ab29a76a02b3067f86a63a6d6c4eb8fbfdcfe4879c1b7b"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.3.0"
+  local_auth_android:
+    dependency: transitive
+    description:
+      name: local_auth_android
+      sha256: "0abe4e72f55c785b28900de52a2522c86baba0988838b5dc22241b072ecccd74"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.48"
+  local_auth_darwin:
+    dependency: transitive
+    description:
+      name: local_auth_darwin
+      sha256: "630996cd7b7f28f5ab92432c4b35d055dd03a747bc319e5ffbb3c4806a3e50d2"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.4.3"
+  local_auth_platform_interface:
+    dependency: transitive
+    description:
+      name: local_auth_platform_interface
+      sha256: "1b842ff177a7068442eae093b64abe3592f816afd2a533c0ebcdbe40f9d2075a"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.10"
+  local_auth_windows:
+    dependency: transitive
+    description:
+      name: local_auth_windows
+      sha256: bc4e66a29b0fdf751aafbec923b5bed7ad6ed3614875d8151afe2578520b2ab5
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.11"
   logging:
     dependency: transitive
     description:
