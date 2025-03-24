@@ -176,7 +176,9 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
       );
     }
     if (title.isNotEmpty) {
-      String formattedDate = "${widget.scheduleDate.year}-${widget.scheduleDate.month.toString().padLeft(2, '0')}-${widget.scheduleDate.day.toString().padLeft(2, '0')}";
+      String formattedDate = "${widget.scheduleDate.year}-${widget.scheduleDate
+          .month.toString().padLeft(2, '0')}-${widget.scheduleDate.day
+          .toString().padLeft(2, '0')}";
 
       ScheduleService scheduleService = ScheduleService();
 
@@ -185,10 +187,10 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
         formattedDate,
         "${startTime.hour}:${startTime.minute}",
         "${endTime.hour}:${endTime.minute}",
-        location?? GeoPoint(0.0, 0.0),
+        location ?? GeoPoint(0.0, 0.0),
         alerts ?? '10m',
         '0xFFFF0000',
-        notes?? {},
+        notes ?? {},
         docs,
       );
 
@@ -197,31 +199,7 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Schedule added successfully')),
       );
-
     }
-
-    String formattedDate = "${widget.scheduleDate.year}-${widget.scheduleDate.month.toString().padLeft(2, '0')}-${widget.scheduleDate.day.toString().padLeft(2, '0')}";
-
-    ScheduleService scheduleService = ScheduleService();
-
-    await scheduleService.addSchedule(
-      title,
-      formattedDate,
-      "${startTime.hour}:${startTime.minute}",
-      "${endTime.hour}:${endTime.minute}",
-      location?? GeoPoint(0.0, 0.0),
-      alerts ?? '10m',
-      '0xFFFF0000',
-      notes?? {},
-      docs,
-    );
-    // Navigate back to the previous screen
-    Navigator.pop(context);
-
-    // Show a snackbar to inform the user
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Schedule added successfully')),
-    );
 
   }
 
