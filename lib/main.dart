@@ -1,27 +1,36 @@
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'ui/signing_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:awesome_notifications/awesome_notifications.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:pulse/services/notification_service.dart';
 
-import 'ui/signing_screen.dart';
-
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  //firebase configuration
-  await Firebase.initializeApp();
 
-  //notification configuration
-  await AwesomeNotifications().initialize(null, [
-    NotificationChannel(
-      channelKey: 'basic_channel',
-      channelName: 'Basic Notifications',
-      channelDescription: 'Notification channel for basic tests',
-      defaultColor: Colors.blue,
-      importance: NotificationImportance.High,
-    ),
-  ]);
+  try {
+    // Firebase configuration
+    await Firebase.initializeApp();
+
+    // Initialize notifications
+    final notificationService = NotificationService();
+    await notificationService.initNotifications();
+
+    // Load .env configuration
+    await dotenv.load(fileName: ".env");
+    await Supabase.initialize(
+      url: "https://wpqjyumngwfovncafewt.supabase.co",
+      anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwcWp5dW1uZ3dmb3ZuY2FmZXd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIzMDI5OTYsImV4cCI6MjA1Nzg3ODk5Nn0.E8aEzKCi3UC-8vMzXazFea_QAd0obgGfPKXVjGpaMpg",
+    );
+  } catch (e) {
+    throw Exception('Error initializing the app: $e');
+  }
+ 
 
   runApp(const MyApp());
 }
+
+final supabase = Supabase.instance.client;
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -29,41 +38,13 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-          useMaterial3: true,
-        ),
-        home: const SignInScreen());
-  }
-}
-
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key});
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  //notification permission
-  @override
-  void initState() {
-    super.initState();
-    AwesomeNotifications().isNotificationAllowed().then((isAllowed) {
-      if (!isAllowed)
-        AwesomeNotifications().requestPermissionToSendNotifications();
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: const Text("Pulse"),
+      title: 'Medical Calendar App',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        useMaterial3: true,
       ),
-      body: const Center(child: Text("hello world")),
+      home: const SignInScreen(),
     );
   }
 }
