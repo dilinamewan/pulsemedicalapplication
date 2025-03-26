@@ -6,6 +6,8 @@ import 'package:http/http.dart' as http;
 import 'dart:io';
 import 'dart:convert';
 
+import 'package:pulse/UI/signing_screen.dart';
+
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -177,8 +179,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       await _auth.signOut();
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(
-            builder: (context) =>
-                const Scaffold()), // Replace with your SignInScreen
+          builder: (context) => const SignInScreen(),
+        ), // Replace with your SignInScreen
         (route) => false,
       );
     } catch (e) {

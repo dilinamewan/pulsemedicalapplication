@@ -219,53 +219,13 @@ class _SignInScreenState extends State<SignInScreen> {
                   ),
                 ),
                 SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Checkbox(
-                          value: _rememberMe,
-                          activeColor: Colors.blue[900],
-                          onChanged: (bool? value) {
-                            setState(() {
-                              _rememberMe = value ?? false;
-                            });
-                          },
-                        ),
-                        Text(
-                          "Remember Me",
-                          style: TextStyle(color: Colors.black87),
-                        ),
-                      ],
-                    ),
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => ForgotPasswordScreen()),
-                        );
-                      },
-                      child: Text(
-                        "Forgot Password?",
-                        style: TextStyle(
-                          color: Colors.blue[900],
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 20),
                 if (_canCheckBiometrics)
-                  ElevatedButton(
+                  IconButton(
                     onPressed: _authenticateWithBiometrics,
-                    child: Text("Sign in with Biometrics"),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue[900],
-                      foregroundColor: Colors.white,
-                    ),
+                    icon: Icon(Icons.fingerprint,
+                        size: 50, color: Colors.blue[900]),
+                    padding: EdgeInsets.all(10),
+                    constraints: BoxConstraints(),
                   ),
                 SizedBox(height: 20),
                 signInSignUpButton(context, true, _signIn),
