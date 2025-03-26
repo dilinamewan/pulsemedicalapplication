@@ -1,7 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:pulse/ui/components/reusable_widget.dart';
-
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -12,33 +10,36 @@ class ForgotPasswordScreen extends StatefulWidget {
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final TextEditingController _emailTextController = TextEditingController();
-  final GlobalKey<ScaffoldMessengerState> _scaffoldKey = GlobalKey<ScaffoldMessengerState>();
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void dispose() {
+    _emailTextController.dispose();
+    super.dispose();
+  }
 
   void _resetPassword() async {
-    String email = _emailTextController.text.trim();
+    if (_formKey.currentState!.validate()) {
+      String email = _emailTextController.text.trim();
 
-    if (email.isEmpty) {
-      _showMessage("Please enter your email address.", isError: true);
-      return;
-    }
+      try {
+        await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+        _showMessage(
+          "Password reset link has been sent to your email.",
+          isError: false,
+        );
 
-    try {
-      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
-      _showMessage(
-        "Password reset link has been sent to your email.",
-        isError: false
-      );
-      
-      // Wait for a moment before popping the screen
-      Future.delayed(const Duration(seconds: 2), () {
-        Navigator.pop(context);
-      });
-    } on FirebaseAuthException catch (e) {
-      String message = "An error occurred. Please try again.";
-      if (e.code == 'user-not-found') {
-        message = "No user found with this email address.";
+        // Wait for a moment before popping the screen
+        Future.delayed(const Duration(seconds: 2), () {
+          Navigator.pop(context);
+        });
+      } on FirebaseAuthException catch (e) {
+        String message = "An error occurred. Please try again.";
+        if (e.code == 'user-not-found') {
+          message = "No user found with this email address.";
+        }
+        _showMessage(message, isError: true);
       }
-      _showMessage(message, isError: true);
     }
   }
 
@@ -46,7 +47,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: isError ? Colors.red : Colors.green,
+        backgroundColor: isError ? Colors.red[400] : Colors.green[400],
       ),
     );
   }
@@ -54,65 +55,77 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      key: _scaffoldKey,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.blue[900]),
+          icon: Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color(0xFFE3F2FD),
-              Color(0xFFFFFFFF),
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+              20,
+              MediaQuery.of(context).size.height * 0.1,
+              20,
+              20
           ),
-        ),
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(
-                20, MediaQuery.of(context).size.height * 0.1, 20, 0),
+          child: Form(
+            key: _formKey,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: <Widget>[
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
                 Text(
                   "Reset Password",
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
-                    color: Colors.blue[900],
+                    color: Colors.white,
                   ),
+                  textAlign: TextAlign.center,
                 ),
-                SizedBox(height: 30),
+                SizedBox(height: 20),
                 Text(
                   "Enter your email address and we'll send you a link to reset your password.",
-                  textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: Colors.black87,
+                    color: Colors.grey[300],
                     fontSize: 16,
                   ),
+                  textAlign: TextAlign.center,
                 ),
                 SizedBox(height: 30),
-                reusableTextField(
-                  "Enter Email",
-                  Icons.person_outlined,
-                  false,
-                  _emailTextController,
+                TextFormField(
+                  controller: _emailTextController,
+                  decoration: InputDecoration(
+                    hintText: "Enter Email",
+                    hintStyle: TextStyle(color: Colors.grey[500]),
+                    filled: true,
+                    fillColor: Colors.grey[800],
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                  style: TextStyle(color: Colors.white),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return "Please enter your email";
+                    }
+                    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                      return "Please enter a valid email";
+                    }
+                    return null;
+                  },
                 ),
                 SizedBox(height: 30),
                 ElevatedButton(
                   onPressed: _resetPassword,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue[900],
-                    padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                    backgroundColor: Colors.blue[700],
+                    padding: EdgeInsets.symmetric(vertical: 15),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                   ),
                   child: Text(
@@ -120,6 +133,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
                   ),
                 ),
@@ -128,6 +142,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           ),
         ),
       ),
+      backgroundColor: Colors.grey[900],
     );
   }
 }
