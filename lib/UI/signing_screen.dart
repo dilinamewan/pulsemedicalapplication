@@ -20,7 +20,7 @@ class _SignInScreenState extends State<SignInScreen> {
   final GlobalKey<ScaffoldMessengerState> _scaffoldKey =
       GlobalKey<ScaffoldMessengerState>();
   final LocalAuthentication _localAuth = LocalAuthentication();
-  bool isPasswordType = true;
+  bool _isPasswordHidden = true; // Changed variable name for clarity
   bool _rememberMe = false;
   late SharedPreferences _prefs;
   bool _canCheckBiometrics = false;
@@ -31,7 +31,7 @@ class _SignInScreenState extends State<SignInScreen> {
     _loadSavedCredentials().then((_) {
       _checkBiometricSupport().then((_) {
         if (_canCheckBiometrics) {
-          _authenticateWithBiometrics(); // Auto-launch biometric authentication
+          _authenticateWithBiometrics();
         }
       });
     });
@@ -162,8 +162,29 @@ class _SignInScreenState extends State<SignInScreen> {
                 reusableTextField("Enter Email", Icons.person_outlined, false,
                     _emailTextController),
                 SizedBox(height: 30),
-                reusableTextField("Enter Password", Icons.lock_outline, true,
-                    _passwordTextController),
+                TextField(
+                  controller: _passwordTextController,
+                  obscureText: _isPasswordHidden,
+                  decoration: InputDecoration(
+                    prefixIcon: Icon(Icons.lock_outline),
+                    labelText: "Enter Password",
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(30.0),
+                    ),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _isPasswordHidden
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _isPasswordHidden = !_isPasswordHidden;
+                        });
+                      },
+                    ),
+                  ),
+                ),
                 SizedBox(height: 10),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
