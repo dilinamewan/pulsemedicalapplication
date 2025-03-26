@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:pulse/ui/components/reusable_widget.dart';
-import 'package:pulse/utils/color_utils.dart';
+
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -67,8 +67,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              hexStringToColor("E3F2FD"),
-              hexStringToColor("FFFFFF"),
+              Color(0xFFE3F2FD),
+              Color(0xFFFFFFFF),
             ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
