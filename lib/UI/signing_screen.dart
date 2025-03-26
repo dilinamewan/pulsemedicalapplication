@@ -29,7 +29,11 @@ class _SignInScreenState extends State<SignInScreen> {
   void initState() {
     super.initState();
     _loadSavedCredentials().then((_) {
-      _checkBiometricSupport();
+      _checkBiometricSupport().then((_) {
+        if (_canCheckBiometrics) {
+          _authenticateWithBiometrics(); // Auto-launch biometric authentication
+        }
+      });
     });
   }
 
@@ -40,9 +44,6 @@ class _SignInScreenState extends State<SignInScreen> {
       setState(() {
         _canCheckBiometrics = canCheckBiometrics || isDeviceSupported;
       });
-      if (!_canCheckBiometrics) {
-        _showErrorMessage('Biometrics not supported on this device');
-      }
     } catch (e) {
       _showErrorMessage('Error checking biometrics: $e');
     }
@@ -71,46 +72,6 @@ class _SignInScreenState extends State<SignInScreen> {
     }
   }
 
-  Future<void> _authenticateWithBiometrics() async {
-    if (!_canCheckBiometrics) {
-      _showErrorMessage('Biometrics not supported on this device');
-      return;
-    }
-
-    try {
-      String? savedEmail = _prefs.getString('email');
-      String? savedPassword = _prefs.getString('password');
-      if (savedEmail == null || savedPassword == null) {
-        _showErrorMessage('No saved credentials found. Please sign in first.');
-        return;
-      }
-
-      final bool didAuthenticate = await _localAuth.authenticate(
-        localizedReason: 'Please authenticate to sign in',
-        options: const AuthenticationOptions(
-          biometricOnly: true,
-          stickyAuth: true,
-          useErrorDialogs: true,
-        ),
-      );
-
-      if (didAuthenticate) {
-        await FirebaseAuth.instance.signInWithEmailAndPassword(
-          email: savedEmail,
-          password: savedPassword,
-        );
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => HomeScreen()),
-        );
-      } else {
-        _showErrorMessage('Biometric authentication cancelled');
-      }
-    } catch (e) {
-      _showErrorMessage('Biometric authentication failed: $e');
-    }
-  }
-
   void _signIn() async {
     String email = _emailTextController.text.trim();
     String password = _passwordTextController.text.trim();
@@ -136,12 +97,37 @@ class _SignInScreenState extends State<SignInScreen> {
   }
 
   void _showErrorMessage(String message) {
-    _scaffoldKey.currentState?.showSnackBar(
+    ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
         backgroundColor: Colors.red,
       ),
     );
+  }
+
+  Future<void> _authenticateWithBiometrics() async {
+    try {
+      bool authenticated = await _localAuth.authenticate(
+        localizedReason: 'Please authenticate to sign in',
+        options: const AuthenticationOptions(
+          useErrorDialogs: true,
+          stickyAuth: true,
+          biometricOnly: true,
+        ),
+      );
+
+      if (authenticated &&
+          _rememberMe &&
+          _emailTextController.text.isNotEmpty &&
+          _passwordTextController.text.isNotEmpty) {
+        _signIn();
+      } else if (authenticated) {
+        _showErrorMessage(
+            "Please enable Remember Me and fill in credentials first");
+      }
+    } catch (e) {
+      _showErrorMessage("Biometric authentication failed: $e");
+    }
   }
 
   @override
@@ -151,10 +137,7 @@ class _SignInScreenState extends State<SignInScreen> {
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              Color(0xFFE3F2FD), // Light blue color
-              Colors.white, // White color
-            ],
+            colors: [Color(0xFFE3F2FD), Colors.white],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -169,64 +152,52 @@ class _SignInScreenState extends State<SignInScreen> {
                 Text(
                   "Pulse",
                   style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue[900],
-                  ),
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue[900]),
                 ),
                 SizedBox(height: 20),
                 logoWidget("assets/images/logo.jpeg"),
                 SizedBox(height: 30),
-                reusableTextField(
-                  "Enter Email",
-                  Icons.person_outlined,
-                  false,
-                  _emailTextController,
-                ),
+                reusableTextField("Enter Email", Icons.person_outlined, false,
+                    _emailTextController),
                 SizedBox(height: 30),
-                TextField(
-                  controller: _passwordTextController,
-                  obscureText: isPasswordType,
-                  enableSuggestions: false,
-                  autocorrect: false,
-                  decoration: InputDecoration(
-                    labelText: "Enter Password",
-                    prefixIcon: Icon(Icons.lock_outline, color: Colors.black54),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        isPasswordType
-                            ? Icons.visibility_off
-                            : Icons.visibility,
-                        color: Colors.black54,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          isPasswordType = !isPasswordType;
-                        });
+                reusableTextField("Enter Password", Icons.lock_outline, true,
+                    _passwordTextController),
+                SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Checkbox(
+                          value: _rememberMe,
+                          onChanged: (value) {
+                            setState(() {
+                              _rememberMe = value!;
+                            });
+                          },
+                        ),
+                        Text("Remember Me")
+                      ],
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => ForgotPasswordScreen()),
+                        );
                       },
+                      child: Text(
+                        "Forgot Password?",
+                        style: TextStyle(
+                            color: Colors.blueAccent,
+                            fontWeight: FontWeight.bold),
+                      ),
                     ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Colors.black54),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Colors.blue),
-                    ),
-                  ),
+                  ],
                 ),
-                SizedBox(height: 20),
-                if (_canCheckBiometrics)
-                  IconButton(
-                    onPressed: _authenticateWithBiometrics,
-                    icon: Icon(Icons.fingerprint,
-                        size: 50, color: Colors.blue[900]),
-                    padding: EdgeInsets.all(10),
-                    constraints: BoxConstraints(),
-                  ),
                 SizedBox(height: 20),
                 signInSignUpButton(context, true, _signIn),
                 SizedBox(height: 20),
@@ -243,10 +214,8 @@ class _SignInScreenState extends State<SignInScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Text(
-          "Don't have an account? ",
-          style: TextStyle(color: Colors.black87),
-        ),
+        Text("Don't have an account? ",
+            style: TextStyle(color: Colors.black87)),
         GestureDetector(
           onTap: () {
             Navigator.push(
@@ -254,12 +223,10 @@ class _SignInScreenState extends State<SignInScreen> {
               MaterialPageRoute(builder: (context) => SignupScreen()),
             );
           },
-          child: const Text(
+          child: Text(
             "Sign Up",
             style: TextStyle(
-              color: Colors.blueAccent,
-              fontWeight: FontWeight.bold,
-            ),
+                color: Colors.blueAccent, fontWeight: FontWeight.bold),
           ),
         ),
       ],

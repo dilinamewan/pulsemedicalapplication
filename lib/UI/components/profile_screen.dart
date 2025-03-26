@@ -180,7 +180,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(
           builder: (context) => const SignInScreen(),
-        ), // Replace with your SignInScreen
+        ),
         (route) => false,
       );
     } catch (e) {
