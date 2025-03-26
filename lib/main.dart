@@ -19,12 +19,12 @@ Future<void> main() async {
     await dotenv.load(fileName: ".env");
     await Supabase.initialize(
       url: "https://wpqjyumngwfovncafewt.supabase.co",
-      anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwcWp5dW1uZ3dmb3ZuY2FmZXd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIzMDI5OTYsImV4cCI6MjA1Nzg3ODk5Nn0.E8aEzKCi3UC-8vMzXazFea_QAd0obgGfPKXVjGpaMpg",
+      anonKey:
+          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwcWp5dW1uZ3dmb3ZuY2FmZXd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIzMDI5OTYsImV4cCI6MjA1Nzg3ODk5Nn0.E8aEzKCi3UC-8vMzXazFea_QAd0obgGfPKXVjGpaMpg",
     );
   } catch (e) {
     throw Exception('Error initializing the app: $e');
   }
- 
 
   runApp(const MyApp());
 }
@@ -47,4 +47,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-

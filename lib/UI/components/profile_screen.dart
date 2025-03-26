@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
 import 'dart:io';
 import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:pulse/ui/signing_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -20,8 +19,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   final TextEditingController _fullNameController = TextEditingController();
   final TextEditingController _phoneNumberController = TextEditingController();
-  final TextEditingController _emergencyContactNameController = TextEditingController();
-  final TextEditingController _emergencyContactNumberController = TextEditingController();
+  final TextEditingController _emergencyContactNameController =
+      TextEditingController();
+  final TextEditingController _emergencyContactNumberController =
+      TextEditingController();
 
   String? _gender;
   String? _dateOfBirth;
@@ -32,12 +33,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
   File? _imageFile;
   final _formKey = GlobalKey<FormState>();
 
+  // ImgBB API Configuration
+  static const String imgBBApiKey =
+      '8673672be15fcfc18a1ec1f2506ba56a'; // Replace with your actual ImgBB API key
+
   @override
   void initState() {
     super.initState();
     _loadUserData();
   }
 
+  // Load existing user data from Firestore
   Future<void> _loadUserData() async {
     setState(() {
       _isLoading = true;
@@ -46,15 +52,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final user = _auth.currentUser;
       if (user != null) {
-        final userData = await _firestore.collection('users').doc(user.uid).get();
-
+        final userData =
+            await _firestore.collection('users').doc(user.uid).get();
         if (userData.exists) {
           final data = userData.data() as Map<String, dynamic>;
           setState(() {
             _fullNameController.text = data['fullName'] ?? '';
             _phoneNumberController.text = data['phoneNumber'] ?? '';
-            _emergencyContactNameController.text = data['emergencyContactName'] ?? '';
-            _emergencyContactNumberController.text = data['emergencyContactNumber'] ?? '';
+            _emergencyContactNameController.text =
+                data['emergencyContactName'] ?? '';
+            _emergencyContactNumberController.text =
+                data['emergencyContactNumber'] ?? '';
             _gender = data['gender'];
             _dateOfBirth = data['dateOfBirth'];
             _profileImageUrl = data['profileImageUrl'];
@@ -70,9 +78,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  // Pick an image from the gallery
   Future<void> _pickImage() async {
     final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    final pickedFile = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 800,
+        maxHeight: 800,
+        imageQuality: 80);
 
     if (pickedFile != null) {
       setState(() {
@@ -81,56 +94,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  Future<String?> _uploadImageToImgur(File imageFile) async {
-    const String imgurClientId = 'YOUR_IMGUR_CLIENT_ID';
-    final url = Uri.parse('https://api.imgur.com/3/image');
-    final bytes = await imageFile.readAsBytes();
-    final base64Image = base64Encode(bytes);
-
-    final response = await http.post(
-      url,
-      headers: {
-        'Authorization': 'Client-ID $imgurClientId',
-      },
-      body: {
-        'image': base64Image,
-      },
-    );
-
-    if (response.statusCode == 200) {
-      final responseData = jsonDecode(response.body);
-      return responseData['data']['link'];
-    } else {
-      throw Exception('Failed to upload image to Imgur');
-    }
-  }
-
-  Future<void> _uploadProfileImage() async {
-    if (_imageFile == null) return;
-
+  // Upload the selected image to ImgBB
+  Future<String?> _uploadImageToImgBB(File imageFile) async {
     try {
-      final user = _auth.currentUser;
-      if (user != null) {
-        final imageUrl = await _uploadImageToImgur(_imageFile!);
+      // Prepare the multipart request
+      final request = http.MultipartRequest(
+          'POST', Uri.parse('https://api.imgbb.com/1/upload?key=$imgBBApiKey'));
 
-        await _firestore.collection('users').doc(user.uid).update({
-          'profileImageUrl': imageUrl,
-        });
+      // Add the file to the request
+      request.files
+          .add(await http.MultipartFile.fromPath('image', imageFile.path));
 
-        setState(() {
-          _profileImageUrl = imageUrl;
-          _imageFile = null;
-        });
+      // Send the request
+      final response = await request.send();
+      final responseBody = await response.stream.bytesToString();
+
+      // Parse the response
+      if (response.statusCode == 200) {
+        final parsedResponse = jsonDecode(responseBody);
+        return parsedResponse['data']['url'];
+      } else {
+        _showError('Image upload failed: ${response.statusCode}');
+        return null;
       }
     } catch (e) {
       _showError("Failed to upload image: $e");
+      return null;
     }
   }
 
+  // Update the profile with the new image and data
   Future<void> _updateProfile() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
 
     setState(() {
       _isLoading = true;
@@ -139,22 +134,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final user = _auth.currentUser;
       if (user != null) {
-        // Upload image if selected
+        String? newImageUrl = _profileImageUrl;
+
+        // Upload new image if selected
         if (_imageFile != null) {
-          await _uploadProfileImage();
+          newImageUrl = await _uploadImageToImgBB(_imageFile!);
         }
 
-        // Update user data
+        // Update Firestore document
         await _firestore.collection('users').doc(user.uid).update({
           'fullName': _fullNameController.text.trim(),
           'phoneNumber': _phoneNumberController.text.trim(),
           'emergencyContactName': _emergencyContactNameController.text.trim(),
-          'emergencyContactNumber': _emergencyContactNumberController.text.trim(),
+          'emergencyContactNumber':
+              _emergencyContactNumberController.text.trim(),
           'gender': _gender,
+          'profileImageUrl': newImageUrl,
         });
 
         setState(() {
           _isEditing = false;
+          _profileImageUrl = newImageUrl;
+          _imageFile = null;
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -170,185 +171,182 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  // Logout functionality
   Future<void> _logout() async {
     try {
       await _auth.signOut();
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (context) => const SignInScreen()),
-            (route) => false,
+        MaterialPageRoute(
+            builder: (context) =>
+                const Scaffold()), // Replace with your SignInScreen
+        (route) => false,
       );
     } catch (e) {
       _showError("Failed to log out: $e");
     }
   }
 
+  // Show error messages
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red[400],
-      ),
+      SnackBar(content: Text(message), backgroundColor: Colors.red[400]),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    // Dark Theme Configuration
-
-
-    return  _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // Profile Image
-                GestureDetector(
-                  onTap: _isEditing ? _pickImage : null,
-                  child: Stack(
-                    children: [
-                      CircleAvatar(
-                        radius: 70,
-                        backgroundColor: Colors.grey[800],
-                        backgroundImage: _imageFile != null
-                            ? FileImage(_imageFile!) as ImageProvider
-                            : _profileImageUrl != null
-                            ? NetworkImage(_profileImageUrl!)
-                            : const AssetImage('assets/default_profile.png'),
-                        child: _profileImageUrl == null && _imageFile == null
-                            ? Icon(Icons.person, size: 70, color: Colors.grey[600])
-                            : null,
-                      ),
-                      if (_isEditing)
-                        Positioned(
-                          bottom: 0,
-                          right: 0,
-                          child: Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: Colors.blue[700],
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // Email Display
-                Text(
-                  _auth.currentUser?.email ?? "No email",
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 30),
-
-                // Form Fields
-                _buildProfileField(
-                  controller: _fullNameController,
-                  labelText: "Full Name",
-                  icon: Icons.person_outlined,
-                  validator: (value) => value == null || value.isEmpty
-                      ? "Please enter your full name"
-                      : null,
-                ),
-                const SizedBox(height: 20),
-
-                _buildProfileField(
-                  controller: _phoneNumberController,
-                  labelText: "Phone Number",
-                  icon: Icons.phone_outlined,
-                  keyboardType: TextInputType.phone,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return "Please enter your phone number";
-                    }
-                    if (value.length < 10) {
-                      return "Please enter a valid phone number";
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 20),
-
-                // Date of Birth (Read-only)
-                TextFormField(
-                  initialValue: _dateOfBirth,
-                  decoration: InputDecoration(
-                    labelText: "Date of Birth",
-                    prefixIcon: const Icon(Icons.calendar_today),
-                  ),
-                  enabled: false,
-                ),
-                const SizedBox(height: 20),
-
-                // Gender Dropdown
-                DropdownButtonFormField<String>(
-                  decoration: InputDecoration(
-                    labelText: "Gender",
-                    prefixIcon: const Icon(Icons.wc),
-                  ),
-                  value: _gender,
-                  items: ['Male', 'Female', 'Other']
-                      .map((value) => DropdownMenuItem(
-                    value: value,
-                    child: Text(value),
-                  ))
-                      .toList(),
-                  onChanged: _isEditing
-                      ? (newValue) => setState(() => _gender = newValue)
-                      : null,
-                  validator: (value) =>
-                  value == null ? "Please select your gender" : null,
-                ),
-                const SizedBox(height: 20),
-
-                _buildProfileField(
-                  controller: _emergencyContactNameController,
-                  labelText: "Emergency Contact Name",
-                  icon: Icons.person_outline,
-                  validator: (value) => value == null || value.isEmpty
-                      ? "Please enter emergency contact name"
-                      : null,
-                ),
-                const SizedBox(height: 20),
-
-                _buildProfileField(
-                  controller: _emergencyContactNumberController,
-                  labelText: "Emergency Contact Number",
-                  icon: Icons.phone_outlined,
-                  keyboardType: TextInputType.phone,
-                  validator: (value) => value == null || value.isEmpty
-                      ? "Please enter emergency contact number"
-                      : null,
-                ),
-                const SizedBox(height: 30),
-
-                // Edit/Save Button
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: _isEditing
-                      ? ElevatedButton(
-                    onPressed: _updateProfile,
-                    child: const Text("Save Changes"),
-                  )
-                      : ElevatedButton(
-                    onPressed: () => setState(() => _isEditing = true),
-                    child: const Text("Edit Profile"),
-                  ),
-                ),
-              ],
-            ),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Profile"),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: _isLoading ? null : _logout,
+            tooltip: "Logout",
           ),
-        );
+        ],
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // Profile Image with Edit Option
+                    GestureDetector(
+                      onTap: _isEditing ? _pickImage : null,
+                      child: Stack(
+                        children: [
+                          CircleAvatar(
+                            radius: 70,
+                            backgroundColor: Colors.grey[800],
+                            backgroundImage: _imageFile != null
+                                ? FileImage(_imageFile!) as ImageProvider
+                                : _profileImageUrl != null
+                                    ? NetworkImage(_profileImageUrl!)
+                                    : const AssetImage(
+                                        'assets/default_profile.png'),
+                          ),
+                          if (_isEditing)
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue[700],
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.camera_alt,
+                                    color: Colors.white, size: 20),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Email Display
+                    Text(_auth.currentUser?.email ?? "No email",
+                        style: Theme.of(context).textTheme.titleMedium),
+                    const SizedBox(height: 30),
+
+                    // Form Fields
+                    _buildProfileField(
+                      controller: _fullNameController,
+                      labelText: "Full Name",
+                      icon: Icons.person_outlined,
+                      validator: (value) =>
+                          value!.isEmpty ? "Please enter your full name" : null,
+                    ),
+                    const SizedBox(height: 20),
+
+                    _buildProfileField(
+                      controller: _phoneNumberController,
+                      labelText: "Phone Number",
+                      icon: Icons.phone_outlined,
+                      keyboardType: TextInputType.phone,
+                      validator: (value) => value!.isEmpty
+                          ? "Please enter your phone number"
+                          : null,
+                    ),
+                    const SizedBox(height: 20),
+
+                    TextFormField(
+                      initialValue: _dateOfBirth,
+                      decoration: const InputDecoration(
+                        labelText: "Date of Birth",
+                        prefixIcon: Icon(Icons.calendar_today),
+                      ),
+                      enabled: false,
+                    ),
+                    const SizedBox(height: 20),
+
+                    DropdownButtonFormField<String>(
+                      decoration: const InputDecoration(
+                        labelText: "Gender",
+                        prefixIcon: Icon(Icons.wc),
+                      ),
+                      value: _gender,
+                      items: ['Male', 'Female', 'Other']
+                          .map((value) => DropdownMenuItem(
+                              value: value, child: Text(value)))
+                          .toList(),
+                      onChanged: _isEditing
+                          ? (newValue) => setState(() => _gender = newValue)
+                          : null,
+                      validator: (value) =>
+                          value == null ? "Please select your gender" : null,
+                    ),
+                    const SizedBox(height: 20),
+
+                    _buildProfileField(
+                      controller: _emergencyContactNameController,
+                      labelText: "Emergency Contact Name",
+                      icon: Icons.person_outline,
+                      validator: (value) => value!.isEmpty
+                          ? "Please enter emergency contact name"
+                          : null,
+                    ),
+                    const SizedBox(height: 20),
+
+                    _buildProfileField(
+                      controller: _emergencyContactNumberController,
+                      labelText: "Emergency Contact Number",
+                      icon: Icons.phone_outlined,
+                      keyboardType: TextInputType.phone,
+                      validator: (value) => value!.isEmpty
+                          ? "Please enter emergency contact number"
+                          : null,
+                    ),
+                    const SizedBox(height: 30),
+
+                    // Edit/Save Button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: _isEditing
+                          ? ElevatedButton(
+                              onPressed: _updateProfile,
+                              child: const Text("Save Changes"),
+                            )
+                          : ElevatedButton(
+                              onPressed: () =>
+                                  setState(() => _isEditing = true),
+                              child: const Text("Edit Profile"),
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+    );
   }
 
-  // Helper method to build consistent form fields
+  // Helper method to build form fields
   Widget _buildProfileField({
     required TextEditingController controller,
     required String labelText,
@@ -358,10 +356,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }) {
     return TextFormField(
       controller: controller,
-      decoration: InputDecoration(
-        labelText: labelText,
-        prefixIcon: Icon(icon),
-      ),
+      decoration: InputDecoration(labelText: labelText, prefixIcon: Icon(icon)),
       validator: validator,
       keyboardType: keyboardType,
       enabled: _isEditing,
