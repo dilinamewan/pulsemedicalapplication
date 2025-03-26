@@ -106,14 +106,15 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      backgroundColor: Colors.black,
       elevation: 0,
       automaticallyImplyLeading: false,
       title: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           CircleAvatar(
-            radius: 16, 
+            radius: 16,
+            backgroundColor: Colors.grey[800],
+            backgroundImage: const AssetImage('assets/default_profile.png'),
           ),
           ElevatedButton(
             onPressed: () async {

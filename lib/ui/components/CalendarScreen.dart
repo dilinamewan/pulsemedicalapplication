@@ -39,8 +39,6 @@ class CalendarScreenState extends State<CalendarScreen> {
   @override
   Widget build(BuildContext context) {
     return Container(
-
-      color: Colors.black, // Sets the background to black
       child: Column(
         children: [
           TableCalendar(
