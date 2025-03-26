@@ -18,9 +18,9 @@ class _SignInScreenState extends State<SignInScreen> {
   final TextEditingController _emailTextController = TextEditingController();
   final TextEditingController _passwordTextController = TextEditingController();
   final GlobalKey<ScaffoldMessengerState> _scaffoldKey =
-      GlobalKey<ScaffoldMessengerState>();
+  GlobalKey<ScaffoldMessengerState>();
   final LocalAuthentication _localAuth = LocalAuthentication();
-  bool _isPasswordHidden = true; // Changed variable name for clarity
+  bool _isPasswordHidden = true;
   bool _rememberMe = false;
   late SharedPreferences _prefs;
   bool _canCheckBiometrics = false;
@@ -45,7 +45,7 @@ class _SignInScreenState extends State<SignInScreen> {
         _canCheckBiometrics = canCheckBiometrics || isDeviceSupported;
       });
     } catch (e) {
-      _showErrorMessage('Error checking biometrics: $e');
+      _showErrorMessage('biometrics authentication not supported');
     }
   }
 
@@ -126,104 +126,170 @@ class _SignInScreenState extends State<SignInScreen> {
             "Please enable Remember Me and fill in credentials first");
       }
     } catch (e) {
-      _showErrorMessage("Biometric authentication failed: $e");
+      _showErrorMessage('biometrics authentication not supported');
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      key: _scaffoldKey,
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFE3F2FD), Colors.white],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+    // Create a custom dark theme
+    final ThemeData darkTheme = ThemeData(
+      brightness: Brightness.dark,
+      primarySwatch: Colors.blue,
+      scaffoldBackgroundColor: Colors.grey[900],
+      appBarTheme: AppBarTheme(
+        color: Colors.grey[850],
+        elevation: 0,
+      ),
+      textTheme: TextTheme(
+        bodyLarge: TextStyle(color: Colors.white),
+        bodyMedium: TextStyle(color: Colors.white70),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: Colors.grey[800],
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: Colors.grey[700]!),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: Colors.grey[700]!),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: Colors.blue[300]!),
+        ),
+        labelStyle: TextStyle(color: Colors.grey[400]),
+        iconColor: Colors.grey[400],
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.blue[700],
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
           ),
         ),
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(
-                20, MediaQuery.of(context).size.height * 0.15, 20, 0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: <Widget>[
-                Text(
-                  "Pulse",
-                  style: TextStyle(
+      ),
+    );
+
+    return Theme(
+      data: darkTheme,
+      child: Scaffold(
+        key: _scaffoldKey,
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Color(0xFF1E1E1E), // Dark gray
+                Colors.grey[900]!, // Almost black
+              ],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                  20, MediaQuery.of(context).size.height * 0.15, 20, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: <Widget>[
+                  Text(
+                    "Pulse",
+                    style: TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
-                      color: Colors.blue[900]),
-                ),
-                SizedBox(height: 20),
-                logoWidget("assets/images/logo.jpeg"),
-                SizedBox(height: 30),
-                reusableTextField("Enter Email", Icons.person_outlined, false,
-                    _emailTextController),
-                SizedBox(height: 30),
-                TextField(
-                  controller: _passwordTextController,
-                  obscureText: _isPasswordHidden,
-                  decoration: InputDecoration(
-                    prefixIcon: Icon(Icons.lock_outline),
-                    labelText: "Enter Password",
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(30.0),
-                    ),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _isPasswordHidden
-                            ? Icons.visibility
-                            : Icons.visibility_off,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _isPasswordHidden = !_isPasswordHidden;
-                        });
-                      },
+                      color: Colors.blue[300],
                     ),
                   ),
-                ),
-                SizedBox(height: 10),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Checkbox(
-                          value: _rememberMe,
-                          onChanged: (value) {
-                            setState(() {
-                              _rememberMe = value!;
-                            });
-                          },
-                        ),
-                        Text("Remember Me")
-                      ],
+                  SizedBox(height: 20),
+                  //logoWidget("assets/images/logo.jpeg"),
+                  SizedBox(height: 30),
+                  TextField(
+                      controller:_emailTextController,
+                      style: TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    prefixIcon: Icon(Icons.person_outlined, color: Colors.grey[400]),
+                    labelText: "Enter Email",
+                    labelStyle: TextStyle(color: Colors.grey[400]),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => ForgotPasswordScreen()),
-                        );
-                      },
-                      child: Text(
-                        "Forgot Password?",
-                        style: TextStyle(
-                            color: Colors.blueAccent,
-                            fontWeight: FontWeight.bold),
+                  )
+                  ),
+                  SizedBox(height: 30),
+                  TextField(
+                    controller: _passwordTextController,
+                    obscureText: _isPasswordHidden,
+                    style: TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      prefixIcon: Icon(Icons.lock_outline, color: Colors.grey[400]),
+                      labelText: "Enter Password",
+                      labelStyle: TextStyle(color: Colors.grey[400]),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _isPasswordHidden
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                          color: Colors.grey[400],
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _isPasswordHidden = !_isPasswordHidden;
+                          });
+                        },
                       ),
                     ),
-                  ],
-                ),
-                SizedBox(height: 20),
-                signInSignUpButton(context, true, _signIn),
-                SizedBox(height: 20),
-                signUpOption(),
-              ],
+                  ),
+                  SizedBox(height: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Checkbox(
+                            value: _rememberMe,
+                            onChanged: (value) {
+                              setState(() {
+                                _rememberMe = value!;
+                              });
+                            },
+                          ),
+                          Text(
+                            "Remember Me",
+                            style: TextStyle(color: Colors.white70),
+                          )
+                        ],
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => ForgotPasswordScreen()),
+                          );
+                        },
+                        child: Text(
+                          "Forgot Password?",
+                          style: TextStyle(
+                            color: Colors.blue[300],
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 20),
+                  signInSignUpButton(context, true, _signIn),
+                  SizedBox(height: 20),
+                  signUpOption(),
+                ],
+              ),
             ),
           ),
         ),
@@ -235,8 +301,10 @@ class _SignInScreenState extends State<SignInScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text("Don't have an account? ",
-            style: TextStyle(color: Colors.black87)),
+        Text(
+          "Don't have an account? ",
+          style: TextStyle(color: Colors.white70),
+        ),
         GestureDetector(
           onTap: () {
             Navigator.push(
@@ -247,7 +315,9 @@ class _SignInScreenState extends State<SignInScreen> {
           child: Text(
             "Sign Up",
             style: TextStyle(
-                color: Colors.blueAccent, fontWeight: FontWeight.bold),
+              color: Colors.blue[300],
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
       ],

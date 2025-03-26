@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:pulse/UI/profile_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -106,42 +107,59 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
+      backgroundColor: Colors.grey[900],
       elevation: 0,
       automaticallyImplyLeading: false,
       title: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          CircleAvatar(
-            radius: 16,
-            backgroundColor: Colors.grey[800],
-            backgroundImage: const AssetImage('assets/default_profile.png'),
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => ProfileScreen()),
+              );
+            },
+            child: CircleAvatar(
+              radius: 16,
+              backgroundImage: const AssetImage('assets/default_profile.png'),
+            ),
           ),
           ElevatedButton(
             onPressed: () async {
               await _handleEmergency(context);
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red[700],
+              backgroundColor: const Color(0xFFD9534F),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16), 
+                borderRadius: BorderRadius.circular(20),
               ),
-              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6), 
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              minimumSize: const Size(100, 40),
             ),
-            child: Text(
+            child: const Text(
               "Emergency",
-              style: TextStyle(color: Colors.white, fontSize: 14), 
+              style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500
+              ),
             ),
           ),
           IconButton(
             onPressed: () {},
-            icon: Icon(Icons.notifications, color: Colors.black, size: 20), 
+            icon: const Icon(
+                Icons.notifications_outlined,
+                color: Colors.black,
+                size: 24
+            ),
           ),
         ],
       ),
-      toolbarHeight: 48, 
+      toolbarHeight: 56,
     );
   }
 
   @override
-  Size get preferredSize => const Size.fromHeight(48); 
+  Size get preferredSize => const Size.fromHeight(56);
 }

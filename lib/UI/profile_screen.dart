@@ -197,18 +197,55 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Profile"),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: _isLoading ? null : _logout,
-            tooltip: "Logout",
-          ),
-        ],
+
+    final ThemeData darkTheme = ThemeData(
+      brightness: Brightness.dark,
+      primarySwatch: Colors.blue,
+      scaffoldBackgroundColor: Colors.grey[900],
+      appBarTheme: AppBarTheme(
+        color: Colors.grey[900],
+        elevation: 0,
       ),
-      body: _isLoading
+      inputDecorationTheme: InputDecorationTheme(
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: Colors.grey[700]!),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: Colors.grey[700]!),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: Colors.blue[300]!),
+        ),
+        labelStyle: TextStyle(color: Colors.grey[400]),
+        iconColor: Colors.grey[400],
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.blue[700],
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      ),
+    );
+
+    return
+      Theme(data: darkTheme, child: Scaffold(
+        appBar: AppBar(
+          title: const Text("Profile"),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.logout),
+              onPressed: _isLoading ? null : _logout,
+              tooltip: "Logout",
+            ),
+          ],
+        ),
+        body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
               padding: const EdgeInsets.all(20),
@@ -344,8 +381,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ],
                 ),
               ),
-            ),
-    );
+            )));
   }
 
   // Helper method to build form fields

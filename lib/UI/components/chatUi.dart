@@ -117,10 +117,14 @@ class _ChatPageState extends State<ChatPage> {
 
     return Scaffold(
         body: LlmChatView(
+          // enableAttachments: false,
+          // enableVoiceNotes: false,
       welcomeMessage:
       "Welcome to Pulse Chat, where you can analyze your medical reports",
       provider: _provider!,
-      style: LlmChatViewStyle(backgroundColor: Colors.black87),
+      style: LlmChatViewStyle(
+          backgroundColor: Colors.grey[900],
+      ),
     ));
   }
 }

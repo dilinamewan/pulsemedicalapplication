@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:pulse/UI/components/profile_screen.dart';
+import 'package:pulse/UI/components/dashboard.dart';
 import 'package:pulse/ui/components/AppBarWidget.dart';
 import 'package:pulse/ui/components/CalendarScreen.dart';
+import 'components/chatUi.dart';
 
 final ThemeData darkTheme = ThemeData(
   brightness: Brightness.dark,
@@ -50,9 +51,9 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final List<Widget> _screens = [
-      Center(child: Text("Home Screen")),
-      CalendarScreen(key: _calendarKey), 
-      ProfileScreen(),
+      CalendarScreen(key: _calendarKey),
+      DashboardPage(),
+      ChatPage()
     ];
 
     return Theme(
@@ -73,12 +74,12 @@ class _HomeScreenState extends State<HomeScreen> {
          selectedItemColor: Colors.white, // White selected item
         unselectedItemColor: Colors.grey[500], // Gray unselected items
         items: [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: 'Calendar'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+          BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Dashboard'),
+          BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Chat'),
         ],
       ),
-      floatingActionButton: _selectedIndex == 1
+      floatingActionButton: _selectedIndex == 0
           ? FloatingActionButton(
               onPressed: () {
                 _calendarKey.currentState?.fabClick(); 
