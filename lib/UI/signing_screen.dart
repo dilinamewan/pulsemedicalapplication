@@ -18,7 +18,7 @@ class _SignInScreenState extends State<SignInScreen> {
   final TextEditingController _emailTextController = TextEditingController();
   final TextEditingController _passwordTextController = TextEditingController();
   final GlobalKey<ScaffoldMessengerState> _scaffoldKey =
-  GlobalKey<ScaffoldMessengerState>();
+      GlobalKey<ScaffoldMessengerState>();
   final LocalAuthentication _localAuth = LocalAuthentication();
   bool _isPasswordHidden = true;
   bool _rememberMe = false;
@@ -208,24 +208,25 @@ class _SignInScreenState extends State<SignInScreen> {
                   //logoWidget("assets/images/logo.jpeg"),
                   SizedBox(height: 30),
                   TextField(
-                      controller:_emailTextController,
+                      controller: _emailTextController,
                       style: TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    prefixIcon: Icon(Icons.person_outlined, color: Colors.grey[400]),
-                    labelText: "Enter Email",
-                    labelStyle: TextStyle(color: Colors.grey[400]),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  )
-                  ),
+                      decoration: InputDecoration(
+                        prefixIcon: Icon(Icons.person_outlined,
+                            color: Colors.grey[400]),
+                        labelText: "Enter Email",
+                        labelStyle: TextStyle(color: Colors.grey[400]),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      )),
                   SizedBox(height: 30),
                   TextField(
                     controller: _passwordTextController,
                     obscureText: _isPasswordHidden,
                     style: TextStyle(color: Colors.white),
                     decoration: InputDecoration(
-                      prefixIcon: Icon(Icons.lock_outline, color: Colors.grey[400]),
+                      prefixIcon:
+                          Icon(Icons.lock_outline, color: Colors.grey[400]),
                       labelText: "Enter Password",
                       labelStyle: TextStyle(color: Colors.grey[400]),
                       border: OutlineInputBorder(
@@ -263,7 +264,7 @@ class _SignInScreenState extends State<SignInScreen> {
                           Text(
                             "Remember Me",
                             style: TextStyle(color: Colors.white70),
-                          )
+                          ),
                         ],
                       ),
                       GestureDetector(
@@ -284,7 +285,19 @@ class _SignInScreenState extends State<SignInScreen> {
                       ),
                     ],
                   ),
-                  SizedBox(height: 20),
+                  // Add fingerprint icon between the row and the Sign In button
+                  if (_canCheckBiometrics)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      child: IconButton(
+                        icon: Icon(
+                          Icons.fingerprint,
+                          size: 40,
+                          color: Colors.blue[300],
+                        ),
+                        onPressed: _authenticateWithBiometrics,
+                      ),
+                    ),
                   signInSignUpButton(context, true, _signIn),
                   SizedBox(height: 20),
                   signUpOption(),
