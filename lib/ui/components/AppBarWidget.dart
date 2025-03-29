@@ -149,8 +149,8 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
           IconButton(
             onPressed: () {},
             icon: const Icon(
-                Icons.notifications_outlined,
-                color: Colors.black,
+                Icons.notifications,
+                color: Colors.white,
                 size: 24
             ),
           ),

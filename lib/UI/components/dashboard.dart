@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:pulse/UI/components/HMUI.dart';
+import 'package:pulse/UI/components/dashboardCalender.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -44,6 +46,16 @@ class _DashboardPageState extends State<DashboardPage> {
             fontWeight: FontWeight.w300,
           ),
         ),
+        const SizedBox(height: 7),
+        PillStyleTableCalendar(),
+        const SizedBox(height: 7),
+        Text("Health Matrix"),
+        const SizedBox(height: 7),
+        HMUIScreen(),
+        const SizedBox(height: 7),
+        Text("Notification"),
+        const SizedBox(height: 7),
+
       ],
     )));
   }
