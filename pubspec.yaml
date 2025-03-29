@@ -40,6 +40,7 @@ dependencies:
   open_filex: ^4.7.0
   workmanager: ^0.5.2
   flutter_colorpicker: ^1.1.0
+  image_picker: ^1.1.2
 
 dev_dependencies:
   flutter_test:

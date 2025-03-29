@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'dart:io';
@@ -36,8 +37,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _formKey = GlobalKey<FormState>();
 
   // ImgBB API Configuration
-  static const String imgBBApiKey =
-      '8673672be15fcfc18a1ec1f2506ba56a'; // Replace with your actual ImgBB API key
+  static final String imgBBApiKey = dotenv.env['IMGBB_API_KEY']!;
 
   @override
   void initState() {
@@ -197,7 +197,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-
     final ThemeData darkTheme = ThemeData(
       brightness: Brightness.dark,
       primarySwatch: Colors.blue,
@@ -233,155 +232,159 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
 
-    return
-      Theme(data: darkTheme, child: Scaffold(
-        appBar: AppBar(
-          title: const Text("Profile"),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.logout),
-              onPressed: _isLoading ? null : _logout,
-              tooltip: "Logout",
+    return Theme(
+        data: darkTheme,
+        child: Scaffold(
+            appBar: AppBar(
+              title: const Text("Profile"),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.logout),
+                  onPressed: _isLoading ? null : _logout,
+                  tooltip: "Logout",
+                ),
+              ],
             ),
-          ],
-        ),
-        body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    // Profile Image with Edit Option
-                    GestureDetector(
-                      onTap: _isEditing ? _pickImage : null,
-                      child: Stack(
+            body: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : SingleChildScrollView(
+                    padding: const EdgeInsets.all(20),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          CircleAvatar(
-                            radius: 70,
-                            backgroundColor: Colors.grey[800],
-                            backgroundImage: _imageFile != null
-                                ? FileImage(_imageFile!) as ImageProvider
-                                : _profileImageUrl != null
-                                    ? NetworkImage(_profileImageUrl!)
-                                    : const AssetImage(
-                                        'assets/default_profile.png'),
-                          ),
-                          if (_isEditing)
-                            Positioned(
-                              bottom: 0,
-                              right: 0,
-                              child: Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: BoxDecoration(
-                                  color: Colors.blue[700],
-                                  shape: BoxShape.circle,
+                          // Profile Image with Edit Option
+                          GestureDetector(
+                            onTap: _isEditing ? _pickImage : null,
+                            child: Stack(
+                              children: [
+                                CircleAvatar(
+                                  radius: 70,
+                                  backgroundColor: Colors.grey[800],
+                                  backgroundImage: _imageFile != null
+                                      ? FileImage(_imageFile!) as ImageProvider
+                                      : _profileImageUrl != null
+                                          ? NetworkImage(_profileImageUrl!)
+                                          : const AssetImage(
+                                              'assets/default_profile.png'),
                                 ),
-                                child: const Icon(Icons.camera_alt,
-                                    color: Colors.white, size: 20),
-                              ),
+                                if (_isEditing)
+                                  Positioned(
+                                    bottom: 0,
+                                    right: 0,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(4),
+                                      decoration: BoxDecoration(
+                                        color: Colors.blue[700],
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(Icons.camera_alt,
+                                          color: Colors.white, size: 20),
+                                    ),
+                                  ),
+                              ],
                             ),
+                          ),
+                          const SizedBox(height: 20),
+
+                          // Email Display
+                          Text(_auth.currentUser?.email ?? "No email",
+                              style: Theme.of(context).textTheme.titleMedium),
+                          const SizedBox(height: 30),
+
+                          // Form Fields
+                          _buildProfileField(
+                            controller: _fullNameController,
+                            labelText: "Full Name",
+                            icon: Icons.person_outlined,
+                            validator: (value) => value!.isEmpty
+                                ? "Please enter your full name"
+                                : null,
+                          ),
+                          const SizedBox(height: 20),
+
+                          _buildProfileField(
+                            controller: _phoneNumberController,
+                            labelText: "Phone Number",
+                            icon: Icons.phone_outlined,
+                            keyboardType: TextInputType.phone,
+                            validator: (value) => value!.isEmpty
+                                ? "Please enter your phone number"
+                                : null,
+                          ),
+                          const SizedBox(height: 20),
+
+                          TextFormField(
+                            initialValue: _dateOfBirth,
+                            decoration: const InputDecoration(
+                              labelText: "Date of Birth",
+                              prefixIcon: Icon(Icons.calendar_today),
+                            ),
+                            enabled: false,
+                          ),
+                          const SizedBox(height: 20),
+
+                          DropdownButtonFormField<String>(
+                            decoration: const InputDecoration(
+                              labelText: "Gender",
+                              prefixIcon: Icon(Icons.wc),
+                            ),
+                            value: _gender,
+                            items: ['Male', 'Female', 'Other']
+                                .map((value) => DropdownMenuItem(
+                                    value: value, child: Text(value)))
+                                .toList(),
+                            onChanged: _isEditing
+                                ? (newValue) =>
+                                    setState(() => _gender = newValue)
+                                : null,
+                            validator: (value) => value == null
+                                ? "Please select your gender"
+                                : null,
+                          ),
+                          const SizedBox(height: 20),
+
+                          _buildProfileField(
+                            controller: _emergencyContactNameController,
+                            labelText: "Emergency Contact Name",
+                            icon: Icons.person_outline,
+                            validator: (value) => value!.isEmpty
+                                ? "Please enter emergency contact name"
+                                : null,
+                          ),
+                          const SizedBox(height: 20),
+
+                          _buildProfileField(
+                            controller: _emergencyContactNumberController,
+                            labelText: "Emergency Contact Number",
+                            icon: Icons.phone_outlined,
+                            keyboardType: TextInputType.phone,
+                            validator: (value) => value!.isEmpty
+                                ? "Please enter emergency contact number"
+                                : null,
+                          ),
+                          const SizedBox(height: 30),
+
+                          // Edit/Save Button
+                          SizedBox(
+                            width: double.infinity,
+                            height: 50,
+                            child: _isEditing
+                                ? ElevatedButton(
+                                    onPressed: _updateProfile,
+                                    child: const Text("Save Changes"),
+                                  )
+                                : ElevatedButton(
+                                    onPressed: () =>
+                                        setState(() => _isEditing = true),
+                                    child: const Text("Edit Profile"),
+                                  ),
+                          ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 20),
-
-                    // Email Display
-                    Text(_auth.currentUser?.email ?? "No email",
-                        style: Theme.of(context).textTheme.titleMedium),
-                    const SizedBox(height: 30),
-
-                    // Form Fields
-                    _buildProfileField(
-                      controller: _fullNameController,
-                      labelText: "Full Name",
-                      icon: Icons.person_outlined,
-                      validator: (value) =>
-                          value!.isEmpty ? "Please enter your full name" : null,
-                    ),
-                    const SizedBox(height: 20),
-
-                    _buildProfileField(
-                      controller: _phoneNumberController,
-                      labelText: "Phone Number",
-                      icon: Icons.phone_outlined,
-                      keyboardType: TextInputType.phone,
-                      validator: (value) => value!.isEmpty
-                          ? "Please enter your phone number"
-                          : null,
-                    ),
-                    const SizedBox(height: 20),
-
-                    TextFormField(
-                      initialValue: _dateOfBirth,
-                      decoration: const InputDecoration(
-                        labelText: "Date of Birth",
-                        prefixIcon: Icon(Icons.calendar_today),
-                      ),
-                      enabled: false,
-                    ),
-                    const SizedBox(height: 20),
-
-                    DropdownButtonFormField<String>(
-                      decoration: const InputDecoration(
-                        labelText: "Gender",
-                        prefixIcon: Icon(Icons.wc),
-                      ),
-                      value: _gender,
-                      items: ['Male', 'Female', 'Other']
-                          .map((value) => DropdownMenuItem(
-                              value: value, child: Text(value)))
-                          .toList(),
-                      onChanged: _isEditing
-                          ? (newValue) => setState(() => _gender = newValue)
-                          : null,
-                      validator: (value) =>
-                          value == null ? "Please select your gender" : null,
-                    ),
-                    const SizedBox(height: 20),
-
-                    _buildProfileField(
-                      controller: _emergencyContactNameController,
-                      labelText: "Emergency Contact Name",
-                      icon: Icons.person_outline,
-                      validator: (value) => value!.isEmpty
-                          ? "Please enter emergency contact name"
-                          : null,
-                    ),
-                    const SizedBox(height: 20),
-
-                    _buildProfileField(
-                      controller: _emergencyContactNumberController,
-                      labelText: "Emergency Contact Number",
-                      icon: Icons.phone_outlined,
-                      keyboardType: TextInputType.phone,
-                      validator: (value) => value!.isEmpty
-                          ? "Please enter emergency contact number"
-                          : null,
-                    ),
-                    const SizedBox(height: 30),
-
-                    // Edit/Save Button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: _isEditing
-                          ? ElevatedButton(
-                              onPressed: _updateProfile,
-                              child: const Text("Save Changes"),
-                            )
-                          : ElevatedButton(
-                              onPressed: () =>
-                                  setState(() => _isEditing = true),
-                              child: const Text("Edit Profile"),
-                            ),
-                    ),
-                  ],
-                ),
-              ),
-            )));
+                  )));
   }
 
   // Helper method to build form fields
