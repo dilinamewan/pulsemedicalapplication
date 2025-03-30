@@ -45,7 +45,7 @@ class _MedicationHomeScreenState extends State<MedicationHomeScreen> {
       }
 
       final medicationsList =
-          await _medicationService.getUserMedications(userId);
+          await _medicationService.getUserMedications();
 
       setState(() {
         medications = medicationsList;

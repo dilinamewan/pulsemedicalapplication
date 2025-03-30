@@ -12,13 +12,12 @@ class MedicationService {
   String get _userId => _auth.currentUser?.uid ?? '';
   
   // Get collection reference
-  CollectionReference get _medicationsCollection => 
-      _firestore.collection('medications');
-  
+  CollectionReference get _medicationsCollection =>
+      _firestore.collection('users').doc(_userId).collection('medications');
+
   // Stream of medications for current user
   Stream<List<Medication>> getMedicationsStream() {
     return _medicationsCollection
-        .where('userId', isEqualTo: _userId)
         .snapshots()
         .map((snapshot) => snapshot.docs
             .map((doc) => Medication.fromMap(doc.data() as Map<String, dynamic>))
@@ -26,11 +25,9 @@ class MedicationService {
   }
   
   // Get medications for any user (returns Future instead of Stream)
-  Future<List<Medication>> getUserMedications([String? userId]) async {
+  Future<List<Medication>> getUserMedications() async {
     try {
-      final String targetUserId = userId ?? _userId;
       final querySnapshot = await _medicationsCollection
-          .where('userId', isEqualTo: targetUserId)
           .get();
       
       return querySnapshot.docs
