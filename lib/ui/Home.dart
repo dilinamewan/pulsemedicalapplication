@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pulse/UI/components/dashboard.dart';
 import 'package:pulse/ui/components/AppBarWidget.dart';
 import 'package:pulse/ui/components/CalendarScreen.dart';
+import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'components/chatUi.dart';
 
 final ThemeData darkTheme = ThemeData(
@@ -79,18 +80,39 @@ class _HomeScreenState extends State<HomeScreen> {
           BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Chat'),
         ],
       ),
-      floatingActionButton: _selectedIndex == 0
-          ? FloatingActionButton(
-              onPressed: () {
-                _calendarKey.currentState?.fabClick(); 
-              },
-              backgroundColor: Colors.grey[800],
-              shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12), // Rounded corners
-      ),
-              child: Icon(Icons.add, color: Colors.white),
-            )
-          : null,
-    ));
+          floatingActionButton: (_selectedIndex == 0)
+              ? SpeedDial(
+            animatedIcon: AnimatedIcons.add_event,
+            backgroundColor: Colors.grey[800],
+            foregroundColor: Colors.white,
+            buttonSize: const Size(50, 50), // Smaller main FAB
+            childrenButtonSize: const Size(45, 45), // Smaller child FABs
+            shape: const CircleBorder(), // Fully round shape
+            children: [
+              SpeedDialChild(
+                child: Icon(Icons.add, color: Colors.white, size: 20),
+                label: 'Add Schedule',
+                labelStyle: TextStyle(fontSize: 14),
+                backgroundColor: Colors.grey[700],
+                onTap: () => _calendarKey.currentState?.fabClick(0),
+              ),
+              SpeedDialChild(
+                child: Icon(Icons.add, color: Colors.white, size: 20),
+                label: 'Add Reminder',
+                labelStyle: TextStyle(fontSize: 14),
+                backgroundColor: Colors.grey[700],
+                onTap: () => _calendarKey.currentState?.fabClick(1),
+              ),
+              SpeedDialChild(
+                child: Icon(Icons.add, color: Colors.white, size: 20),
+                label: 'Add Health Matrix',
+                labelStyle: TextStyle(fontSize: 14),
+                backgroundColor: Colors.grey[700],
+                onTap: () => _calendarKey.currentState?.fabClick(2),
+              ),
+            ],
+          )
+              : null,
+        ));
   }
 }
