@@ -100,13 +100,24 @@ class CalendarScreenState extends State<CalendarScreen> with SingleTickerProvide
   }
 
   void fabClick(int index) {
-    if (_selectedDay.microsecondsSinceEpoch < DateTime.now().microsecondsSinceEpoch) {
+    bool isPastDate = _selectedDay.microsecondsSinceEpoch < DateTime.now().microsecondsSinceEpoch;
+
+    if (isPastDate && index < 2) {
+      // For schedules (index 0) and medications (index 1), prevent past dates
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("Cannot add schedule for past dates"),
+          content: Text("Cannot add schedule or medication for past dates"),
+        ),
+      );
+    } else if (!isPastDate && index == 2) {
+      // For HMUI (index 2), prevent future dates
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("HMUI can only be added for today or past dates"),
         ),
       );
     } else {
+      // Valid date conditions, proceed with navigation
       if (index == 0) {
         Navigator.push(
           context,
@@ -120,20 +131,23 @@ class CalendarScreenState extends State<CalendarScreen> with SingleTickerProvide
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => AddMedicationScreen(),
+            builder: (context) => AddMedicationScreen(
+                scheduleDate: _selectedDay
+            ),
           ),
         );
       } else {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => AddHMUI(),
+            builder: (context) => AddHMUI(
+                scheduleDate: _selectedDay
+            ),
           ),
         );
       }
     }
   }
-
   Widget _buildDayCell(DateTime day, {bool isSelected = false, bool isToday = false}) {
     // Create a clean DateTime for the current day (no time) for proper comparison
     DateTime dateKey = DateTime(day.year, day.month, day.day);
