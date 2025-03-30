@@ -69,7 +69,7 @@ class _ScheduleCalenderScreenState extends State<ScheduleCalenderScreen> {
               return Container(
                 margin: const EdgeInsets.only(bottom: 12),
                  decoration: BoxDecoration(
-                  color: Colors.grey[900], // Dark gray background for list items
+                  color: Colors.white10, // Dark gray background for list items
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: InkWell(
@@ -113,7 +113,7 @@ class _ScheduleCalenderScreenState extends State<ScheduleCalenderScreen> {
                                     style: TextStyle(color: Colors.white),
                                   ),
                                   IconButton(
-                                    icon: Icon(Icons.delete, color: Colors.red),
+                                    icon: Icon(Icons.delete_outline, color: Colors.red),
                                     alignment: Alignment.centerRight,
                                     onPressed: () {
                                       // Delete the Schedule

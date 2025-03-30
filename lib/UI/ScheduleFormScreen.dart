@@ -279,78 +279,97 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
 
   @override
   Widget build(BuildContext context) {
+    String formattedDate = DateFormat('d\'th\' MMMM yyyy').format(DateTime.now());
+
     return Scaffold(
-      appBar: AppBarWidget(),
-      backgroundColor: Colors.black,
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 50),
-            Center(
-              child: Text(
-                widget.scheduleId == null ? "Add Schedule" : "Edit Schedule",
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+      appBar: AppBar(
+        backgroundColor: Colors.grey[900],
+        iconTheme: const IconThemeData(color: Colors.white), // Set back button color to white
+        title: Text(
+          widget.scheduleId == null ? "Add Schedule" : "Edit Schedule",
+          style: const TextStyle(color: Colors.white),
+        ),
+    ),
+      backgroundColor: Colors.grey[900],
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Center(
+                        child:Text(
+                          'Today is $formattedDate',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.7),
+                            fontSize: 20,
+                            fontWeight: FontWeight.w300,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      _buildTextField(
+                          'Title', Icons.circle, Colors.grey[800]!, titleController),
+                      const SizedBox(height: 20),
+                      _buildTimePickerCard(),
+                      const SizedBox(height: 20),
+                      _buildOptionNote('Note', Icons.sticky_note_2),
+                      _buildOptionTileAlert('Alert', Icons.notifications),
+                      _buildOptionTileLocation('Location', Icons.location_on),
+                      const SizedBox(height: 20),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 20),
-            _buildTextField(
-                'Title', Icons.circle, Colors.grey[800]!, titleController),
-            const SizedBox(height: 20),
-            _buildTimePickerCard(),
-            const SizedBox(height: 20),
-            _buildOptionNote('Note', Icons.sticky_note_2),
-            _buildOptionTileAlert('Alert', Icons.notifications),
-            _buildOptionTileLocation('Location', Icons.location_on),
-            const Spacer(), // Pushes buttons to the bottom
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context); // Closes the screen
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.transparent, // Cancel button color
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 30, vertical: 12),
-                  ),
-                  child: const Text("Cancel",
-                      style: TextStyle(color: Colors.white)),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 5),
+                decoration: BoxDecoration(
+                  color: Colors.grey[900],
                 ),
-                ElevatedButton(
-                  onPressed: () {
-                    if (widget.scheduleId == null) {
-                      addSchedule();
-                    } else {
-                      updateSchedule();
-                      Navigator.pop(context);
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.transparent, // Save button color
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 30, vertical: 12),
-                  ),
-                  child:
-                      const Text("Save", style: TextStyle(color: Colors.white)),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+                      ),
+                      child: const Text("Cancel", style: TextStyle(color: Colors.white)),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        if (widget.scheduleId == null) {
+                          addSchedule();
+                        } else {
+                          updateSchedule();
+                          Navigator.pop(context);
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blueAccent,
+                        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+                      ),
+                      child: const Text("Save", style: TextStyle(color: Colors.white)),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            const SizedBox(height: 20), // Space at the bottom
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildTextField(String hint, IconData icon, Color color,
-      TextEditingController controller) {
+  Widget _buildTextField(String hint, IconData icon, Color color, TextEditingController controller) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
@@ -433,7 +452,7 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
         margin: const EdgeInsets.only(top: 10),
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         decoration: BoxDecoration(
-          color: Colors.grey[900],
+          color: Colors.grey[800],
           borderRadius: BorderRadius.circular(10),
         ),
         child: Row(
@@ -458,7 +477,7 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey[900],
+        color: Colors.grey[800],
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
@@ -484,8 +503,7 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
     );
   }
 
-  Widget _buildTimeColumn(
-      String label, TimeOfDay time, Function(TimeOfDay) onTimeSelected) {
+  Widget _buildTimeColumn(String label, TimeOfDay time, Function(TimeOfDay) onTimeSelected) {
     return Column(
       children: [
         Text(label, style: const TextStyle(color: Colors.white54)),
@@ -530,7 +548,7 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
         margin: const EdgeInsets.only(top: 10),
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         decoration: BoxDecoration(
-          color: Colors.grey[900],
+          color: Colors.grey[800],
           borderRadius: BorderRadius.circular(10),
         ),
         child: Row(
@@ -560,7 +578,7 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
         margin: const EdgeInsets.only(top: 10),
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         decoration: BoxDecoration(
-          color: Colors.grey[900],
+          color: Colors.grey[800],
           borderRadius: BorderRadius.circular(10),
         ),
         child: Row(
@@ -584,7 +602,7 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
   void _showViewUpdateOverlay() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.grey[900],
+      backgroundColor: Colors.grey[800],
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -673,7 +691,7 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
   void _showAlertOverlay() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.grey[900],
+      backgroundColor: Colors.grey[800],
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -715,7 +733,7 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
   void _showHospitalOverlay() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.grey[900],
+      backgroundColor: Colors.grey[800],
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -771,7 +789,6 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
   }
 
   // Default alert selection
-
   Widget _buildRadioTile(StateSetter setState, String label, String value) {
     return RadioListTile<String>(
       title: Text(label, style: const TextStyle(color: Colors.white)),
