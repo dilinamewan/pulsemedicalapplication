@@ -61,7 +61,14 @@ class _PillStyleTableCalendarState extends State<PillStyleTableCalendar> {
         int colorValue = int.parse(data['color'].replaceFirst('#', '0xFF'));
         Color color = Color(colorValue);
 
-        tempIndicators.putIfAbsent(dayOfMonth, () => []).add(color);
+        // Limit to 3 indicators per day
+        if (!tempIndicators.containsKey(dayOfMonth)) {
+          tempIndicators[dayOfMonth] = [];
+        }
+
+        if (tempIndicators[dayOfMonth]!.length < 3) {
+          tempIndicators[dayOfMonth]!.add(color);
+        }
       } catch (e) {
         print("Error processing schedule: $e");
       }
@@ -85,8 +92,8 @@ class _PillStyleTableCalendarState extends State<PillStyleTableCalendar> {
         mainAxisSize: MainAxisSize.min,
         children: [
           TableCalendar(
-            firstDay: startOfWeek,
-            lastDay: endOfWeek,
+            firstDay: DateTime.utc(2000, 1, 1),
+            lastDay: DateTime.utc(2100, 12, 31),
             focusedDay: focusedDate,
             calendarFormat: CalendarFormat.week,
             daysOfWeekVisible: false,
@@ -112,6 +119,7 @@ class _PillStyleTableCalendarState extends State<PillStyleTableCalendar> {
   }
 
   Widget _buildDayCell(DateTime day, {bool isSelected = false, bool isToday = false}) {
+
     return Container(
       width: 30,
       height: 80,
