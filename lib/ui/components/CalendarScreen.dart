@@ -18,6 +18,7 @@ class CalendarScreen extends StatefulWidget {
 
 class CalendarScreenState extends State<CalendarScreen> with SingleTickerProviderStateMixin {
   DateTime _selectedDay = DateTime.now();
+  DateTime _focusedDay = DateTime.now();
   late TabController _tabController;
 
   @override
@@ -27,14 +28,16 @@ class CalendarScreenState extends State<CalendarScreen> with SingleTickerProvide
     _tabController = TabController(length: 2, vsync: this);
   }
 
-  Map<int, List<Color>> dateIndicators = {};
+  // Changed from Map<int, List<Color>> to Map<DateTime, List<Color>> to store full dates
+  Map<DateTime, List<Color>> dateIndicators = {};
 
   Future<void> _loadSchedules() async {
-    await getWeekdaySchedules();
+    await getMonthSchedules(_focusedDay);
     setState(() {}); // Trigger UI update after fetching data
   }
 
-  Future<void> getWeekdaySchedules() async {
+  // Updated to fetch schedules for a specific month
+  Future<void> getMonthSchedules(DateTime month) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       print('User not logged in.');
@@ -43,9 +46,9 @@ class CalendarScreenState extends State<CalendarScreen> with SingleTickerProvide
 
     final FirebaseFirestore firestore = FirebaseFirestore.instance;
 
-    DateTime now = DateTime.now();
-    DateTime startOfWeek = now.subtract(Duration(days: now.weekday-1));
-    DateTime endOfWeek = startOfWeek.add(Duration(days: 6));
+    // Get the first and last day of the month
+    DateTime firstDayOfMonth = DateTime(month.year, month.month, 1);
+    DateTime lastDayOfMonth = DateTime(month.year, month.month + 1, 0);
 
     QuerySnapshot schedules = await firestore
         .collection('users')
@@ -53,7 +56,7 @@ class CalendarScreenState extends State<CalendarScreen> with SingleTickerProvide
         .collection('schedules')
         .get();
 
-    Map<int, List<Color>> tempIndicators = {};
+    Map<DateTime, List<Color>> tempIndicators = {};
 
     for (var doc in schedules.docs) {
       Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
@@ -62,19 +65,23 @@ class CalendarScreenState extends State<CalendarScreen> with SingleTickerProvide
 
       try {
         DateTime scheduleDate = DateTime.parse(data['date']);
-        if (scheduleDate.isBefore(startOfWeek) || scheduleDate.isAfter(endOfWeek)) continue;
 
-        int dayOfMonth = scheduleDate.day;
+        // Check if the schedule date is within the current month
+        if (scheduleDate.isBefore(firstDayOfMonth) || scheduleDate.isAfter(lastDayOfMonth)) continue;
+
+        // Create a DateTime with year, month, day (no time) for cleaner comparison
+        DateTime dateKey = DateTime(scheduleDate.year, scheduleDate.month, scheduleDate.day);
+
         int colorValue = int.parse(data['color'].replaceFirst('#', '0xFF'));
         Color color = Color(colorValue);
 
         // Limit to 3 indicators per day
-        if (!tempIndicators.containsKey(dayOfMonth)) {
-          tempIndicators[dayOfMonth] = [];
+        if (!tempIndicators.containsKey(dateKey)) {
+          tempIndicators[dateKey] = [];
         }
 
-        if (tempIndicators[dayOfMonth]!.length < 3) {
-          tempIndicators[dayOfMonth]!.add(color);
+        if (tempIndicators[dateKey]!.length < 3) {
+          tempIndicators[dateKey]!.add(color);
         }
       } catch (e) {
         print("Error processing schedule: $e");
@@ -128,17 +135,19 @@ class CalendarScreenState extends State<CalendarScreen> with SingleTickerProvide
   }
 
   Widget _buildDayCell(DateTime day, {bool isSelected = false, bool isToday = false}) {
-    // Get the indicators for this day, limited to at most 3
-    final indicators = dateIndicators.containsKey(day.day)
-        ? dateIndicators[day.day]!.take(3).toList()
+    // Create a clean DateTime for the current day (no time) for proper comparison
+    DateTime dateKey = DateTime(day.year, day.month, day.day);
+
+    // Get the indicators for this specific date
+    final indicators = dateIndicators.containsKey(dateKey)
+        ? dateIndicators[dateKey]!.take(3).toList()
         : <Color>[];
 
     return Container(
       width: 28,
-      height: 42, // Further reduced height
-      margin: EdgeInsets.symmetric(horizontal: 0.5, vertical: 1), // Reduced margins
+      height: 42,
       decoration: BoxDecoration(
-        color: isSelected ? Colors.white : Colors.transparent,
+        color: isSelected ? Colors.white : Colors.white10,
         borderRadius: BorderRadius.circular(15),
         border: Border.all(color: Colors.grey.withOpacity(0.5), width: 1),
       ),
@@ -177,71 +186,110 @@ class CalendarScreenState extends State<CalendarScreen> with SingleTickerProvide
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Column(
-        children: [
-          // Calendar section
-          TableCalendar(
-            calendarFormat: CalendarFormat.month,
-            availableCalendarFormats: const {
-              CalendarFormat.month: 'Month',
-            },
-            headerVisible: true,
-            focusedDay: _selectedDay,
-            firstDay: DateTime.utc(2000, 1, 1),
-            lastDay: DateTime.utc(2100, 12, 31),
-            daysOfWeekVisible: false,
-            selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-            onDaySelected: (selectedDay, focusedDay) {
-              setState(() {
-                _selectedDay = selectedDay;
-              });
-            },
-            calendarBuilders: CalendarBuilders(
-              defaultBuilder: (context, day, focusedDay) => _buildDayCell(day),
-              selectedBuilder: (context, day, focusedDay) => _buildDayCell(day, isSelected: true),
-              todayBuilder: (context, day, focusedDay) => _buildDayCell(day, isToday: true),
-            ),
-            headerStyle: const HeaderStyle(
-              titleCentered: true,
-              formatButtonVisible: false,
-              titleTextStyle: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
-              leftChevronIcon: Icon(Icons.chevron_left, color: Colors.white),
-              rightChevronIcon: Icon(Icons.chevron_right, color: Colors.white),
-            ),
-            rowHeight: 50, // Reduced row height
-          ),
-          SizedBox(height: 5),
-          // Tab bar section
-          TabBar(
-            controller: _tabController,
-            tabs: const [
-              Tab(text: "Clinic Schedules"),
-              Tab(text: "Medication Reminders"),
-            ],
-            indicator: const UnderlineTabIndicator(
-              borderSide: BorderSide(width: 2.0, color: Colors.white),
-              insets: EdgeInsets.symmetric(horizontal: 16.0),
-            ),
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.grey,
-            indicatorSize: TabBarIndicatorSize.label,
-          ),
-          SizedBox(height: 5),
-          // Tab content with expanded height
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                // Schedule tab
-                ScheduleCalenderScreen(
-                  date: DateFormat('yyyy-MM-dd').format(_selectedDay),
+      body: SafeArea(
+        child: NestedScrollView(
+          headerSliverBuilder: (context, innerBoxIsScrolled) {
+            return [
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 10),
+                  child: TableCalendar(
+                    calendarFormat: CalendarFormat.month,
+                    availableCalendarFormats: const {
+                      CalendarFormat.month: 'Month',
+                    },
+                    headerVisible: true,
+                    focusedDay: _focusedDay,
+                    firstDay: DateTime.utc(2000, 1, 1),
+                    lastDay: DateTime.utc(2100, 12, 31),
+                    daysOfWeekVisible: false,
+                    selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+                    onDaySelected: (selectedDay, focusedDay) {
+                      setState(() {
+                        _selectedDay = selectedDay;
+                        _focusedDay = focusedDay;
+                      });
+                    },
+                    onPageChanged: (focusedDay) {
+                      setState(() {
+                        _focusedDay = focusedDay;
+                      });
+                      getMonthSchedules(focusedDay);
+                    },
+                    calendarBuilders: CalendarBuilders(
+                      defaultBuilder: (context, day, focusedDay) => _buildDayCell(day),
+                      selectedBuilder: (context, day, focusedDay) => _buildDayCell(day, isSelected: true),
+                      todayBuilder: (context, day, focusedDay) => _buildDayCell(day, isToday: true),
+                    ),
+                    headerStyle: const HeaderStyle(
+                      titleCentered: true,
+                      formatButtonVisible: false,
+                      titleTextStyle: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                      leftChevronIcon: Icon(Icons.chevron_left, color: Colors.white),
+                      rightChevronIcon: Icon(Icons.chevron_right, color: Colors.white),
+                    ),
+                    rowHeight: 50, // Reduced row height
+                  ),
                 ),
-                MedicationHomeScreen(),
-              ],
-            ),
+              ),
+              SliverPersistentHeader(
+                pinned: true,
+                delegate: _SliverAppBarDelegate(
+                  TabBar(
+                    controller: _tabController,
+                    tabs: const [
+                      Tab(text: "Clinic Schedules"),
+                      Tab(text: "Medication Reminders"),
+                    ],
+                    indicator: const UnderlineTabIndicator(
+                      borderSide: BorderSide(width: 2.0, color: Colors.white),
+                      insets: EdgeInsets.symmetric(horizontal: 16.0),
+                    ),
+                    labelColor: Colors.white,
+                    unselectedLabelColor: Colors.grey,
+                    indicatorSize: TabBarIndicatorSize.label,
+                  ),
+                ),
+              ),
+            ];
+          },
+          body: TabBarView(
+            controller: _tabController,
+            children: [
+              ScheduleCalenderScreen(
+                date: DateFormat('yyyy-MM-dd').format(_selectedDay),
+              ),
+              MedicationHomeScreen(),
+            ],
           ),
-        ],
+        ),
       ),
     );
+  }
+}
+
+// Custom delegate to make the TabBar sticky
+class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
+  final TabBar _tabBar;
+
+  _SliverAppBarDelegate(this._tabBar);
+
+  @override
+  double get minExtent => _tabBar.preferredSize.height;
+
+  @override
+  double get maxExtent => _tabBar.preferredSize.height;
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return Container(
+      color: Theme.of(context).scaffoldBackgroundColor, // Match the background color
+      child: _tabBar,
+    );
+  }
+
+  @override
+  bool shouldRebuild(_SliverAppBarDelegate oldDelegate) {
+    return false;
   }
 }
