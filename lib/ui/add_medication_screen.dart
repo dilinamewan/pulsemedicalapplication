@@ -16,10 +16,68 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
   final _medicationService = MedicationService();
   final _nameController = TextEditingController();
   final _notesController = TextEditingController();
-  
+
   String _selectedCategory = Medication.categories.first;
   final List<DateTime> _reminderTimes = [DateTime.now()];
-  
+
+  // Define the dark theme
+  final ThemeData _darkTheme = ThemeData(
+    brightness: Brightness.dark,
+    primarySwatch: Colors.blue,
+    scaffoldBackgroundColor: Colors.grey[900],
+    cardColor: Colors.grey[850],
+    appBarTheme: AppBarTheme(
+      backgroundColor: Colors.grey[900],
+      elevation: 0,
+    ),
+    textTheme: const TextTheme(
+      bodyMedium: TextStyle(color: Colors.white),
+      titleMedium: TextStyle(color: Colors.white),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: Colors.grey[800],
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: BorderSide(color: Colors.grey[700]!),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: BorderSide(color: Colors.grey[700]!),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: BorderSide(color: Colors.blue[300]!),
+      ),
+      labelStyle: TextStyle(color: Colors.grey[400]),
+      iconColor: Colors.grey[400],
+    ),
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.blue[700],
+        foregroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 12),
+      ),
+    ),
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(
+        foregroundColor: Colors.blue[300],
+      ),
+    ),
+    iconTheme: IconThemeData(
+      color: Colors.grey[400],
+    ),
+    dropdownMenuTheme: DropdownMenuThemeData(
+      textStyle: TextStyle(color: Colors.white),
+      menuStyle: MenuStyle(
+        backgroundColor: MaterialStatePropertyAll(Colors.grey[850]),
+      ),
+    ),
+  );
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -29,52 +87,54 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Add Medication'),
-      ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            TextFormField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'Medication Name',
-                border: OutlineInputBorder(),
-              ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter medication name';
-                }
-                return null;
-              },
+    // Apply the dark theme to this widget and its descendants
+    return Theme(
+      data: _darkTheme,
+      child: Builder(
+        builder: (context) => Scaffold(
+          appBar: AppBar(
+            title: const Text('Add Medication'),
+          ),
+          body: Form(
+            key: _formKey,
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                TextFormField(
+                  controller: _nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Medication Name',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter medication name';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                _buildCategoryDropdown(),
+                const SizedBox(height: 16),
+                _buildReminderTimesSection(),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _notesController,
+                  decoration: const InputDecoration(
+                    labelText: 'Notes (Optional)',
+                    border: OutlineInputBorder(),
+                  ),
+                  maxLines: 3,
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: _saveMedication,
+                  // Remove hardcoded styles to use theme
+                  child: const Text('Save Medication'),
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            _buildCategoryDropdown(),
-            const SizedBox(height: 16),
-            _buildReminderTimesSection(),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _notesController,
-              decoration: const InputDecoration(
-                labelText: 'Notes (Optional)',
-                border: OutlineInputBorder(),
-              ),
-              maxLines: 3,
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _saveMedication,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-              ),
-              child: const Text('Save Medication'),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -87,6 +147,7 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
         border: OutlineInputBorder(),
       ),
       value: _selectedCategory,
+      dropdownColor: Colors.grey[850], // Match dropdown color to theme
       items: Medication.categories.map((category) {
         return DropdownMenuItem<String>(
           value: category,
@@ -107,9 +168,9 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Reminder Times',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
         ),
         const SizedBox(height: 8),
         ListView.builder(
@@ -163,7 +224,7 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
     if (_formKey.currentState?.validate() != true) {
       return;
     }
-    
+
     final userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -171,7 +232,7 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
       );
       return;
     }
-    
+
     final medication = Medication(
       name: _nameController.text,
       category: _selectedCategory,
@@ -180,7 +241,7 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
       notes: _notesController.text.isNotEmpty ? _notesController.text : null,
       userId: userId,
     );
-    
+
     try {
       await _medicationService.addMedication(medication);
       if (mounted) {

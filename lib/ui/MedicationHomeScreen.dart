@@ -7,8 +7,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 class MedicationHomeScreen extends StatefulWidget {
   const MedicationHomeScreen({super.key});
 
-  // Add a public method that the parent widget can call
-  // This is a better approach than exposing the state
   void refreshMedications(BuildContext context) {
     final state = context.findAncestorStateOfType<_MedicationHomeScreenState>();
     state?.loadMedications();
@@ -129,23 +127,9 @@ class _MedicationHomeScreenState extends State<MedicationHomeScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.medication_outlined,
-              size: 80,
-              color: Colors.grey[400],
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'No medications added yet',
-              style: TextStyle(
-                fontSize: 18,
-                color: Colors.grey[600],
-                fontWeight: FontWeight.bold,
-              ),
-            ),
             const SizedBox(height: 8),
             Text(
-              'Tap the + button to add your medications',
+              'No medications reminders found',
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey[500],

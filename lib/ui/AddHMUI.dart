@@ -1,8 +1,46 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
+final ThemeData darkTheme = ThemeData(
+  brightness: Brightness.dark,
+  primarySwatch: Colors.blue,
+  scaffoldBackgroundColor: Colors.grey[900],
+  appBarTheme: AppBarTheme(
+    color: Colors.grey[900],
+    elevation: 0,
+  ),
+  inputDecorationTheme: InputDecorationTheme(
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: BorderSide(color: Colors.grey[700]!),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: BorderSide(color: Colors.grey[700]!),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: BorderSide(color: Colors.blue[300]!),
+    ),
+    labelStyle: TextStyle(color: Colors.grey[400]),
+    iconColor: Colors.grey[400],
+  ),
+  elevatedButtonTheme: ElevatedButtonThemeData(
+    style: ElevatedButton.styleFrom(
+      backgroundColor: Colors.blue[700],
+      foregroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+      ),
+    ),
+  ),
+);
 
 class AddHMUI extends StatefulWidget {
-  const AddHMUI({Key? key}) : super(key: key);
+
+  const AddHMUI({super.key,});
 
   @override
   _AddHMUIState createState() => _AddHMUIState();
@@ -11,31 +49,31 @@ class AddHMUI extends StatefulWidget {
 class _AddHMUIState extends State<AddHMUI> {
   final TextEditingController bloodPressureController = TextEditingController();
   final TextEditingController sugarLevelController = TextEditingController();
-  final TextEditingController heartRateController = TextEditingController();
   final TextEditingController cholesterolLevelController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    String formattedDate = DateFormat('d\'th\' MMMM yyyy').format(DateTime.now());
+    return  Theme(
+        data: darkTheme,
+        child:Scaffold(
       appBar: AppBar(
         title: const Text('Add Health Metrics'),
-        backgroundColor: Colors.black,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Input Your Health Metrics',
+            Text(
+              'Today is $formattedDate',
               style: TextStyle(
-                fontSize: 28,
-                color: Colors.redAccent,
-                fontWeight: FontWeight.bold,
+                color: Colors.white.withOpacity(0.7),
+                fontSize: 24,
+                fontWeight: FontWeight.w300,
               ),
             ),
-            const SizedBox(height: 30),
-
+            const SizedBox(height: 14),
             // Blood Pressure Input Field
             _buildTextField(
               controller: bloodPressureController,
@@ -64,35 +102,28 @@ class _AddHMUIState extends State<AddHMUI> {
               icon: Icons.science,
               keyboardType: TextInputType.number,
             ),
-            const SizedBox(height: 20),
-
-            // Heart Rate Input Field
-            _buildTextField(
-              controller: heartRateController,
-              label: 'Heart Rate',
-              hint: 'Input your Heart Rate (bpm)',
-              icon: Icons.favorite,
-              keyboardType: TextInputType.number,
-            ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 30),
 
             // Save Button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () async {
-                  String userId = "yB57HeFJmMbaY8WLyxfg"; // Save logic to Firestore
                   try {
+                    final user = FirebaseAuth.instance.currentUser;
+                    if (user == null) {
+                      print('User not logged in.');
+                      return;
+                    }
                     await FirebaseFirestore.instance
                         .collection('users') // The existing 'users' collection
-                        .doc(userId) // The specific user document
-                        .collection('health_metrics') // The health metrics subcollection
+                        .doc(user.uid) // The specific user document
+                        .collection('Health Metrics') // The health metrics subcollection
                         .add({
                       'blood_pressure': bloodPressureController.text,
                       'sugar_level': sugarLevelController.text,
-                      'heart_rate': heartRateController.text,
                       'cholesterol_level': cholesterolLevelController.text,
-                      'timestamp': FieldValue.serverTimestamp(), // Automatically add timestamp
+                      'date': FieldValue.serverTimestamp(),
                     });
 
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -102,7 +133,6 @@ class _AddHMUIState extends State<AddHMUI> {
                     // Clear form after saving
                     bloodPressureController.clear();
                     sugarLevelController.clear();
-                    heartRateController.clear();
                     cholesterolLevelController.clear();
 
                   } catch (e) {
@@ -113,7 +143,7 @@ class _AddHMUIState extends State<AddHMUI> {
                   }
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.redAccent,
+                  backgroundColor: Colors.blueAccent,
                   padding: const EdgeInsets.symmetric(vertical: 15),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30),
@@ -128,7 +158,7 @@ class _AddHMUIState extends State<AddHMUI> {
           ],
         ),
       ),
-    );
+    ));
   }
 
   // Reusable TextField Widget
@@ -145,10 +175,10 @@ class _AddHMUIState extends State<AddHMUI> {
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
-        prefixIcon: Icon(icon, color: Colors.redAccent),
+        prefixIcon: Icon(icon, color: Colors.blueAccent),
         border: const OutlineInputBorder(),
         focusedBorder: const OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.redAccent),
+          borderSide: BorderSide(color: Colors.blueAccent),
         ),
       ),
       style: const TextStyle(fontSize: 16),

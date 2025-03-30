@@ -35,7 +35,7 @@ class HMUIScreenState extends State<HMUIScreen> {
           .collection('users')
           .doc(user.uid)
           .collection('Health Metrics')
-          .orderBy('timestamp', descending: false)
+          .orderBy('date', descending: false)
           .get();
 
       if (snapshot.docs.isEmpty) {
