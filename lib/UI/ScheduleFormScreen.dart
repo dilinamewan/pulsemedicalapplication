@@ -279,7 +279,7 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    String formattedDate = DateFormat('d\'th\' MMMM yyyy').format(DateTime.now());
+    String formattedDate = DateFormat('d\'th\' MMMM yyyy').format(widget.scheduleDate);
 
     return Scaffold(
       appBar: AppBar(
