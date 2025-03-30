@@ -39,8 +39,8 @@ final ThemeData darkTheme = ThemeData(
 );
 
 class AddHMUI extends StatefulWidget {
-
-  const AddHMUI({super.key,});
+  final DateTime scheduleDate;
+  const AddHMUI({super.key,required this.scheduleDate,});
 
   @override
   _AddHMUIState createState() => _AddHMUIState();
@@ -53,7 +53,7 @@ class _AddHMUIState extends State<AddHMUI> {
 
   @override
   Widget build(BuildContext context) {
-    String formattedDate = DateFormat('d\'th\' MMMM yyyy').format(DateTime.now());
+    String formattedDate = DateFormat('d\'th\' MMMM yyyy').format(widget.scheduleDate);
     return  Theme(
         data: darkTheme,
         child:Scaffold(
@@ -123,7 +123,7 @@ class _AddHMUIState extends State<AddHMUI> {
                       'blood_pressure': bloodPressureController.text,
                       'sugar_level': sugarLevelController.text,
                       'cholesterol_level': cholesterolLevelController.text,
-                      'date': FieldValue.serverTimestamp(),
+                      'date': widget.scheduleDate,
                     });
 
                     ScaffoldMessenger.of(context).showSnackBar(
