@@ -61,6 +61,10 @@ class _SignInScreenState extends State<SignInScreen> {
   }
 
   Future<void> _saveCredentials() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+    await _prefs.setString('user_id', user.uid);
+    }
     if (_rememberMe) {
       await _prefs.setString('email', _emailTextController.text);
       await _prefs.setString('password', _passwordTextController.text);
