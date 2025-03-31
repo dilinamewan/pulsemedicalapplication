@@ -5,7 +5,8 @@ import 'package:pulse/services/medication_service.dart';
 import 'package:pulse/ui/components/reminder_time_picker.dart';
 
 class AddMedicationScreen extends StatefulWidget {
-  const AddMedicationScreen({super.key});
+  final DateTime scheduleDate;
+  const AddMedicationScreen({super.key,required this.scheduleDate});
 
   @override
   State<AddMedicationScreen> createState() => _AddMedicationScreenState();
