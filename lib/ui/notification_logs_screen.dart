@@ -61,13 +61,26 @@ class _NotificationLogsScreenState extends State<NotificationLogsScreen> {
       _isLoading = true;
     });
 
-    final notifications =
-        await AwesomeNotifications().listScheduledNotifications();
+    try {
+      final notifications = await AwesomeNotifications().listScheduledNotifications();
+      
+      // Debug: Print notification details
+      for (var notification in notifications) {
+        print('Notification ID: ${notification.content?.id}');
+        print('Title: ${notification.content?.title}');
+        print('Schedule: ${notification.schedule?.toString()}');
+      }
 
-    setState(() {
-      _notifications = notifications;
-      _isLoading = false;
-    });
+      setState(() {
+        _notifications = notifications;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('Error loading notifications: $e');
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -81,6 +94,14 @@ class _NotificationLogsScreenState extends State<NotificationLogsScreen> {
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _loadNotifications,
+          ),
+          IconButton(
+            icon: const Icon(Icons.add_alert),
+            onPressed: () {
+              _notificationService.sendTestNotification();
+              Future.delayed(const Duration(seconds: 1), _loadNotifications);
+            },
+            tooltip: 'Send test notification',
           ),
         ],
       ),
@@ -99,15 +120,37 @@ class _NotificationLogsScreenState extends State<NotificationLogsScreen> {
   }
 
   Widget _buildNotificationItem(NotificationModel notification) {
-    final dateFormat = DateFormat('MMM d, yyyy');
-    final timeFormat = DateFormat('h:mm a');
-
-    final DateTime? scheduledDate = notification.schedule?.timeZone != null
-        ? DateTime.fromMillisecondsSinceEpoch(
-            int.tryParse(notification.schedule!.timeZone) ?? 0,
-            isUtc: true)
-        : null;
-
+    final medicationId = notification.content?.payload?['medicationId'] ?? 'Unknown';
+    
+    // Extract date from schedule string if available
+    String scheduleInfo = 'Schedule information not available';
+    if (notification.schedule != null) {
+      final scheduleStr = notification.schedule.toString();
+      scheduleInfo = 'Raw schedule: $scheduleStr';
+      
+      // Try to extract date with regex if it contains a date pattern
+      try {
+        RegExp dateRegex = RegExp(r'(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})');
+        final match = dateRegex.firstMatch(scheduleStr);
+        
+        if (match != null && match.groupCount >= 5) {
+          final year = int.parse(match.group(1)!);
+          final month = int.parse(match.group(2)!);
+          final day = int.parse(match.group(3)!);
+          final hour = int.parse(match.group(4)!);
+          final minute = int.parse(match.group(5)!);
+          
+          final dateTime = DateTime(year, month, day, hour, minute);
+          final dateFormat = DateFormat('MMM d, yyyy');
+          final timeFormat = DateFormat('h:mm a');
+          
+          scheduleInfo = 'Scheduled for: ${dateFormat.format(dateTime)} at ${timeFormat.format(dateTime)}';
+        }
+      } catch (e) {
+        print('Error extracting date from string: $e');
+      }
+    }
+    
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: ListTile(
@@ -116,18 +159,33 @@ class _NotificationLogsScreenState extends State<NotificationLogsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(notification.content?.body ?? 'No body'),
-            if (scheduledDate != null)
-              Text(
-                'Scheduled for: ${dateFormat.format(scheduledDate)} at ${timeFormat.format(scheduledDate)}',
-                style: TextStyle(color: Colors.grey[600]),
-              ),
+            Text(
+              scheduleInfo,
+              style: TextStyle(color: Colors.grey[600]),
+            ),
+            Text(
+              'Medication ID: $medicationId',
+              style: TextStyle(color: Colors.grey[600], fontSize: 12),
+            ),
+            Text(
+              'Notification ID: ${notification.content?.id}',
+              style: TextStyle(color: Colors.grey[600], fontSize: 12),
+            ),
           ],
         ),
         leading: const CircleAvatar(
           backgroundColor: Colors.blue,
           child: Icon(Icons.notifications, color: Colors.white),
         ),
-        isThreeLine: scheduledDate != null,
+        isThreeLine: true,
+        trailing: IconButton(
+          icon: const Icon(Icons.delete, color: Colors.red),
+          onPressed: () async {
+            await AwesomeNotifications().cancel(notification.content?.id ?? 0);
+            _loadNotifications();
+          },
+          tooltip: 'Cancel notification',
+        ),
       ),
     );
   }
