@@ -187,6 +187,7 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
         notes ?? {},
         docs,
       );
+      uploadFile();
 
       Navigator.pop(context);
 
