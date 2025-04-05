@@ -1,17 +1,17 @@
-
-
 import 'package:flutter/material.dart';
 import 'package:pulse/models/Schedules.dart';
 
 import '../ScheduleFormScreen.dart';
 
 class ScheduleCalenderScreen extends StatefulWidget {
-
   final String date;
-  const ScheduleCalenderScreen(
-      {super.key,
+  final VoidCallback? onScheduleUpdated; // Add this callback parameter
 
-      required this.date});
+  const ScheduleCalenderScreen({
+    super.key,
+    required this.date,
+    this.onScheduleUpdated,
+  });
 
   @override
   _ScheduleCalenderScreenState createState() => _ScheduleCalenderScreenState();
@@ -25,13 +25,13 @@ class _ScheduleCalenderScreenState extends State<ScheduleCalenderScreen> {
   void refreshSchedules() {
     _fetchSchedules();
   }
-  
+
   @override
   void initState() {
     super.initState();
     _fetchSchedules();
   }
-  
+
   @override
   void didUpdateWidget(covariant ScheduleCalenderScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -44,23 +44,26 @@ class _ScheduleCalenderScreenState extends State<ScheduleCalenderScreen> {
     setState(() {
       _isLoading = true;
     });
-    List<Schedule> schedules =
-        await _scheduleService.getSchedule(widget.date);
+    List<Schedule> schedules = await _scheduleService.getSchedule(widget.date);
 
     setState(() {
       _schedules = schedules;
       _isLoading = false;
     });
   }
-  
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
-    
+
     return _schedules.isEmpty
-        ? const Center(child: Text("No schedules found",style: TextStyle(color: Colors.white),))
+        ? const Center(
+            child: Text(
+            "No schedules found",
+            style: TextStyle(color: Colors.white),
+          ))
         : ListView.builder(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             itemCount: _schedules.length,
@@ -68,7 +71,7 @@ class _ScheduleCalenderScreenState extends State<ScheduleCalenderScreen> {
               final schedule = _schedules[index];
               return Container(
                 margin: const EdgeInsets.only(bottom: 12),
-                 decoration: BoxDecoration(
+                decoration: BoxDecoration(
                   color: Colors.white10, // Dark gray background for list items
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -82,7 +85,14 @@ class _ScheduleCalenderScreenState extends State<ScheduleCalenderScreen> {
                           scheduleDate: DateTime.parse(schedule.date),
                         ),
                       ),
-                    );
+                    ).then((_) {
+                      _fetchSchedules();
+
+                      // Call the parent's refresh callback if provided
+                      if (widget.onScheduleUpdated != null) {
+                        widget.onScheduleUpdated!();
+                      }
+                    });
                   },
                   borderRadius: BorderRadius.circular(12),
                   child: Row(
@@ -104,29 +114,32 @@ class _ScheduleCalenderScreenState extends State<ScheduleCalenderScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
                                     schedule.title,
                                     style: TextStyle(color: Colors.white),
                                   ),
                                   IconButton(
-                                    icon: Icon(Icons.delete_outline, color: Colors.red),
+                                    icon: Icon(Icons.delete_outline,
+                                        color: Colors.red),
                                     alignment: Alignment.centerRight,
                                     onPressed: () {
                                       // Delete the Schedule
                                       _scheduleService.deleteSchedule(schedule.scheduleId).then((_) {
                                         refreshSchedules();
-                                      });
 
+                                        // Call the parent's refresh callback if provided
+                                        if (widget.onScheduleUpdated != null) {
+                                          widget.onScheduleUpdated!();
+                                        }
+                                      });
                                     },
                                   ),
                                 ],
                               ),
-
-
                             ],
                           ),
                         ),
@@ -139,4 +152,3 @@ class _ScheduleCalenderScreenState extends State<ScheduleCalenderScreen> {
           );
   }
 }
-

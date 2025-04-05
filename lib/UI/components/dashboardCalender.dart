@@ -24,7 +24,13 @@ class _PillStyleTableCalendarState extends State<PillStyleTableCalendar> {
 
   Future<void> _loadSchedules() async {
     await getWeekdaySchedules();
-    setState(() {}); // Trigger UI update after fetching data
+    if (mounted) {
+      setState(() {}); // Ensure we only call setState if widget is still mounted
+    }
+  }
+
+  void refreshCalendarData() {
+    _loadSchedules();
   }
 
   Future<void> getWeekdaySchedules() async {

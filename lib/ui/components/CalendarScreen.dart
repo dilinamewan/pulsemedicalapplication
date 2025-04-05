@@ -33,7 +33,13 @@ class CalendarScreenState extends State<CalendarScreen> with SingleTickerProvide
 
   Future<void> _loadSchedules() async {
     await getMonthSchedules(_focusedDay);
-    setState(() {}); // Trigger UI update after fetching data
+    if (mounted) {
+      setState(() {}); // Ensure we only call setState if widget is still mounted
+    }// Trigger UI update after fetching data
+  }
+
+  void refreshCalendarData() {
+    _loadSchedules();
   }
 
   // Updated to fetch schedules for a specific month
@@ -120,28 +126,21 @@ class CalendarScreenState extends State<CalendarScreen> with SingleTickerProvide
         ),
       );
     } else {
+      Widget page;
       if (index == 0) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ScheduleFormScreen(scheduleDate: _selectedDay),
-          ),
-        );
+        page = ScheduleFormScreen(scheduleDate: _selectedDay);
       } else if (index == 1) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => AddMedicationScreen(scheduleDate: _selectedDay),
-          ),
-        );
+        page = AddMedicationScreen(scheduleDate: _selectedDay);
       } else {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => AddHMUI(scheduleDate: _selectedDay),
-          ),
-        );
+        page = AddHMUI(scheduleDate: _selectedDay);
       }
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => page),
+      ).then((_) {
+        setState(() {});
+      });
     }
   }
 
@@ -281,6 +280,7 @@ class CalendarScreenState extends State<CalendarScreen> with SingleTickerProvide
             children: [
               ScheduleCalenderScreen(
                 date: DateFormat('yyyy-MM-dd').format(_selectedDay),
+                onScheduleUpdated: refreshCalendarData,
               ),
               MedicationHomeScreen(),
             ],
