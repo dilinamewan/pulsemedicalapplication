@@ -25,10 +25,10 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
   final ThemeData _darkTheme = ThemeData(
     brightness: Brightness.dark,
     primarySwatch: Colors.blue,
-    scaffoldBackgroundColor: Colors.grey[900],
+    scaffoldBackgroundColor: Colors.black,
     cardColor: Colors.grey[850],
     appBarTheme: AppBarTheme(
-      backgroundColor: Colors.grey[900],
+      backgroundColor: Colors.transparent,
       elevation: 0,
     ),
     textTheme: const TextTheme(

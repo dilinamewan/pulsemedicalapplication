@@ -123,7 +123,7 @@ class _ChatPageState extends State<ChatPage> {
       "Welcome to Pulse Chat, where you can analyze your medical reports",
       provider: _provider!,
       style: LlmChatViewStyle(
-          backgroundColor: Colors.grey[900],
+          backgroundColor: Colors.black,
       ),
     ));
   }

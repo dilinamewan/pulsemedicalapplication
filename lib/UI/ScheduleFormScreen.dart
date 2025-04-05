@@ -284,14 +284,14 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.grey[900],
+        backgroundColor: Colors.black,
         iconTheme: const IconThemeData(color: Colors.white), // Set back button color to white
         title: Text(
           widget.scheduleId == null ? "Add Schedule" : "Edit Schedule",
           style: const TextStyle(color: Colors.white),
         ),
     ),
-      backgroundColor: Colors.grey[900],
+      backgroundColor: Colors.black,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(20.0),
@@ -330,7 +330,7 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 5),
                 decoration: BoxDecoration(
-                  color: Colors.grey[900],
+                  color: Colors.black,
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -355,7 +355,7 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
                         }
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blueAccent,
+                        backgroundColor: Colors.black,
                         padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
                       ),
                       child: const Text("Save", style: TextStyle(color: Colors.white)),

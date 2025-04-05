@@ -52,9 +52,9 @@ class _SignupScreenState extends State<SignupScreen> {
         primary: Colors.blue[300]!,
         secondary: Colors.blue[200]!,
         surface: Colors.grey[850]!,
-        background: Colors.grey[900]!,
+        background: Colors.black!,
       ),
-      scaffoldBackgroundColor: Colors.grey[900],
+      scaffoldBackgroundColor: Colors.black,
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -119,8 +119,8 @@ class _SignupScreenState extends State<SignupScreen> {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
+                Colors.black,
                 Colors.grey[900]!,
-                Colors.grey[850]!,
               ],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,

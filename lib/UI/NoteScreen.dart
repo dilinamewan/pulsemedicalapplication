@@ -56,14 +56,14 @@ class _NoteScreenState extends State<NoteScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.grey[900],
+        backgroundColor: Colors.black,
         iconTheme: const IconThemeData(color: Colors.white),
         title: Text(
           widget.scheduleId.isEmpty ? "Add Note" : "Edit Note",
           style: const TextStyle(color: Colors.white),
         ),
       ),
-      backgroundColor: Colors.grey[900],
+      backgroundColor: Colors.black,
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20.0),
         child: Column(
@@ -142,7 +142,7 @@ class _NoteScreenState extends State<NoteScreen> {
         ),
       ),
       bottomNavigationBar: Container(
-        color: Colors.grey[900],
+        color: Colors.black,
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,

@@ -6,9 +6,9 @@ import 'package:intl/intl.dart';
 final ThemeData darkTheme = ThemeData(
   brightness: Brightness.dark,
   primarySwatch: Colors.blue,
-  scaffoldBackgroundColor: Colors.grey[900],
+  scaffoldBackgroundColor: Colors.black,
   appBarTheme: AppBarTheme(
-    color: Colors.grey[900],
+    color: Colors.transparent,
     elevation: 0,
   ),
   inputDecorationTheme: InputDecorationTheme(

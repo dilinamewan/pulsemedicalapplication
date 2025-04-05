@@ -142,7 +142,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           ),
         ),
       ),
-      backgroundColor: Colors.grey[900],
+      backgroundColor: Colors.black,
     );
   }
 }

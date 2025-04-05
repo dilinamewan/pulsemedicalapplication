@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:pulse/UI/AddHMUI.dart';
-import 'package:pulse/UI/MedicationHomeScreen.dart';
+import 'package:pulse/UI/components/MedicationHomeScreen.dart';
 import 'package:pulse/UI/add_medication_screen.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:pulse/ui/components/ScheduleCalenderScreen.dart';
@@ -158,24 +158,35 @@ class CalendarScreenState extends State<CalendarScreen> with SingleTickerProvide
         : <Color>[];
 
     return Container(
-      width: 28,
-      height: 42,
+      width: 48,
+      height: 63,
+
       decoration: BoxDecoration(
-        color: isSelected ? Colors.white : Colors.white10,
+        color: Colors.black,
         borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: Colors.grey.withOpacity(0.5), width: 1),
+        border: isSelected ? Border.all(color: Colors.white.withOpacity(0.8), width: 1): Border.all(color: Colors.black.withOpacity(0.5), width: 1),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min, // Important - use minimum space needed
         children: [
-          SizedBox(height: 4), // Smaller top padding
-          Text(
+          SizedBox(height: 4),
+          // Smaller top padding
+          Container(
+            decoration: BoxDecoration(
+              color: isToday? Colors.white: (isSelected? Colors.transparent : Colors.black),
+              borderRadius: BorderRadius.circular(5),
+            ),
+
+            padding: EdgeInsets.symmetric(horizontal: 7),
+
+            child: Text(
             day.day.toString(),
             style: TextStyle(
-              color: isSelected ? Colors.black : (isToday ? Colors.blue : Colors.white),
+
+              color: isToday? Colors.black : Colors.white,
               fontSize: 13, // Slightly smaller text
               fontWeight: FontWeight.bold,
-            ),
+            )),
           ),
           SizedBox(height: 2), // Minimal spacing
           // Create a fixed size container for indicators
@@ -206,7 +217,7 @@ class CalendarScreenState extends State<CalendarScreen> with SingleTickerProvide
             return [
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 10),
+                  padding: EdgeInsets.symmetric(horizontal: 5),
                   child: TableCalendar(
                     calendarFormat: CalendarFormat.month,
                     availableCalendarFormats: const {
@@ -242,7 +253,8 @@ class CalendarScreenState extends State<CalendarScreen> with SingleTickerProvide
                       leftChevronIcon: Icon(Icons.chevron_left, color: Colors.white),
                       rightChevronIcon: Icon(Icons.chevron_right, color: Colors.white),
                     ),
-                    rowHeight: 50, // Reduced row height
+                    rowHeight: 65,
+                    // Reduced row height
                   ),
                 ),
               ),

@@ -200,9 +200,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final ThemeData darkTheme = ThemeData(
       brightness: Brightness.dark,
       primarySwatch: Colors.blue,
-      scaffoldBackgroundColor: Colors.grey[900],
+      scaffoldBackgroundColor: Colors.black,
       appBarTheme: AppBarTheme(
-        color: Colors.grey[900],
+        color: Colors.black,
         elevation: 0,
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -290,7 +290,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                           // Email Display
                           Text(_auth.currentUser?.email ?? "No email",
-                              style: Theme.of(context).textTheme.titleMedium),
+                          style: TextStyle(
+                            color: Colors.white
+                          ),),
                           const SizedBox(height: 30),
 
                           // Form Fields
