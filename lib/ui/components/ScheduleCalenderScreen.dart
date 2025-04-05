@@ -115,23 +115,23 @@ class _ScheduleCalenderScreenState extends State<ScheduleCalenderScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text(
-                                    schedule.title,
-                                    style: TextStyle(color: Colors.white),
+                                  Expanded( // 👈 Wrap the Text with Expanded
+                                    child: Text(
+                                      schedule.title,
+                                      style: TextStyle(color: Colors.white),
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
+                                      softWrap: false,
+                                    ),
                                   ),
                                   IconButton(
-                                    icon: Icon(Icons.delete_outline,
-                                        color: Colors.red),
+                                    icon: Icon(Icons.delete_outline, color: Colors.red),
                                     alignment: Alignment.centerRight,
                                     onPressed: () {
-                                      // Delete the Schedule
                                       _scheduleService.deleteSchedule(schedule.scheduleId).then((_) {
                                         refreshSchedules();
-
-                                        // Call the parent's refresh callback if provided
                                         if (widget.onScheduleUpdated != null) {
                                           widget.onScheduleUpdated!();
                                         }
