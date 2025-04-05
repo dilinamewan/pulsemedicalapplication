@@ -3,7 +3,6 @@ import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:pulse/UI/NoteScreen.dart';
-import 'package:pulse/UI/home.dart';
 import 'package:pulse/models/Schedules.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:pulse/models/Hospitals.dart';
@@ -276,6 +275,18 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
     }
   }
 
+  void blockPastDates() {
+    if (widget.scheduleDate.microsecondsSinceEpoch < DateTime.now().microsecondsSinceEpoch) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Cannot add schedule for past dates"),
+        ),
+      );
+    } else {
+      updateSchedule();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     String formattedDate = DateFormat('d\'th\' MMMM yyyy').format(widget.scheduleDate);
@@ -348,7 +359,7 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
                         if (widget.scheduleId == null) {
                           addSchedule();
                         } else {
-                          updateSchedule();
+                          blockPastDates();
                           Navigator.pop(context);
                         }
                       },
