@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pulse/UI/medication_details_screen.dart';
 import 'package:pulse/models/Medication.dart';
 import 'package:pulse/ui/components/medication_list_item.dart';
 import 'package:pulse/services/medication_service.dart';
@@ -58,6 +59,21 @@ class _MedicationHomeScreenState extends State<MedicationHomeScreen> {
       });
     }
   }
+
+  void _navigateToMedicationDetails(Medication medication) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MedicationDetailsScreen(medication: medication),
+      ),
+    );
+
+    if (result == true) {
+      // Refresh medications list if the result is true
+      loadMedications();
+    }
+  }
+
 
   void _onTakenStatusChanged(
       Medication medication, int index, bool value) async {
@@ -152,6 +168,7 @@ class _MedicationHomeScreenState extends State<MedicationHomeScreen> {
             onTakenStatusChanged: (timeIndex, value) =>
                 _onTakenStatusChanged(medications[index], timeIndex, value),
             onDelete: () => _onDeleteMedication(medications[index]),
+            onTap: () => _navigateToMedicationDetails(medications[index]),
           );
         },
       ),

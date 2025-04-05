@@ -39,34 +39,43 @@ final ThemeData darkTheme = ThemeData(
 );
 
 
-class MedicationDetailsScreen extends StatelessWidget {
+class MedicationDetailsScreen extends StatefulWidget {
   final Medication medication;
-  final MedicationService _medicationService = MedicationService();
 
-  MedicationDetailsScreen({super.key, required this.medication});
+  const MedicationDetailsScreen({super.key, required this.medication});
+
+  @override
+  _MedicationDetailsScreenState createState() =>
+      _MedicationDetailsScreenState();
+}
+
+class _MedicationDetailsScreenState extends State<MedicationDetailsScreen> {
+  final MedicationService _medicationService = MedicationService();
+  bool isUpdating = false; // Flag to show/hide spinner
 
   @override
   Widget build(BuildContext context) {
     return Theme(
-        data: darkTheme,
-        child:Scaffold(
-      appBar: AppBar(
-        title: Text(medication.name),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildInfoCard(context),
-            const SizedBox(height: 16),
-            _buildRemindersList(context),
-            const SizedBox(height: 16),
-            if (medication.notes != null) _buildNotesSection(context),
-          ],
+      data: darkTheme,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(widget.medication.name),
+        ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildInfoCard(context),
+              const SizedBox(height: 16),
+              _buildRemindersList(context),
+              const SizedBox(height: 16),
+              if (widget.medication.notes != null) _buildNotesSection(context),
+            ],
+          ),
         ),
       ),
-    ));
+    );
   }
 
   Widget _buildInfoCard(BuildContext context) {
@@ -82,7 +91,7 @@ class MedicationDetailsScreen extends StatelessWidget {
                 const Icon(Icons.medication, size: 20),
                 const SizedBox(width: 8),
                 Text(
-                  medication.name,
+                  widget.medication.name,
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -96,7 +105,7 @@ class MedicationDetailsScreen extends StatelessWidget {
                 const Icon(Icons.category, size: 20),
                 const SizedBox(width: 8),
                 Text(
-                  'Category: ${medication.category}',
+                  'Category: ${widget.medication.category}',
                   style: const TextStyle(fontSize: 16),
                 ),
               ],
@@ -107,7 +116,7 @@ class MedicationDetailsScreen extends StatelessWidget {
                 const Icon(Icons.access_time, size: 20),
                 const SizedBox(width: 8),
                 Text(
-                  'Frequency: ${medication.frequency} times per day',
+                  'Frequency: ${widget.medication.frequency} times per day',
                   style: const TextStyle(fontSize: 16),
                 ),
               ],
@@ -120,7 +129,7 @@ class MedicationDetailsScreen extends StatelessWidget {
 
   Widget _buildRemindersList(BuildContext context) {
     final timeFormat = DateFormat('h:mm a');
-    
+
     return Card(
       elevation: 2,
       child: Padding(
@@ -139,11 +148,11 @@ class MedicationDetailsScreen extends StatelessWidget {
             ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: medication.reminderTimes.length,
+              itemCount: widget.medication.reminderTimes.length,
               itemBuilder: (context, index) {
-                final time = medication.reminderTimes[index];
-                final isTaken = medication.takenStatus[index];
-                
+                final time = widget.medication.reminderTimes[index];
+                bool isTaken = widget.medication.takenStatus[index];
+
                 return ListTile(
                   leading: Icon(
                     isTaken ? Icons.check_circle : Icons.schedule,
@@ -151,14 +160,26 @@ class MedicationDetailsScreen extends StatelessWidget {
                   ),
                   title: Text(timeFormat.format(time)),
                   subtitle: Text(isTaken ? 'Taken' : 'Not taken'),
-                  trailing: Switch(
+                  trailing: isUpdating
+                      ? const CircularProgressIndicator() // Show loading spinner
+                      : Switch(
                     value: isTaken,
-                    onChanged: (value) {
-                      _medicationService.updateTakenStatus(
-                        medication.id,
+                    onChanged: (value) async {
+                      setState(() {
+                        isUpdating = true; // Show the spinner
+                        widget.medication.takenStatus[index] = value; // Update the local state immediately
+                      });
+
+                      await _medicationService.updateTakenStatus(
+                        widget.medication.id,
                         index,
                         value,
                       );
+
+                      setState(() {
+                        isUpdating = false; // Hide the spinner
+                      });
+                      Navigator.pop(context, true);
                     },
                   ),
                 );
@@ -187,7 +208,7 @@ class MedicationDetailsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              medication.notes ?? '',
+              widget.medication.notes ?? '',
               style: const TextStyle(fontSize: 16),
             ),
           ],
