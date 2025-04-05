@@ -83,7 +83,7 @@ class _HomeScreenState extends State<HomeScreen> {
           floatingActionButton: (_selectedIndex == 0)
               ? SpeedDial(
             animatedIcon: AnimatedIcons.add_event,
-            backgroundColor: Colors.grey[800],
+            backgroundColor: Colors.grey[900],
             foregroundColor: Colors.white,
             buttonSize: const Size(50, 50), // Smaller main FAB
             childrenButtonSize: const Size(45, 45), // Smaller child FABs
@@ -93,21 +93,21 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Icon(Icons.add, color: Colors.white, size: 20),
                 label: 'Add Schedule',
                 labelStyle: TextStyle(fontSize: 14),
-                backgroundColor: Colors.grey[700],
+                backgroundColor: Colors.grey[900],
                 onTap: () => _calendarKey.currentState?.fabClick(0),
               ),
               SpeedDialChild(
                 child: Icon(Icons.add, color: Colors.white, size: 20),
                 label: 'Add Reminder',
                 labelStyle: TextStyle(fontSize: 14),
-                backgroundColor: Colors.grey[700],
+                backgroundColor: Colors.grey[900],
                 onTap: () => _calendarKey.currentState?.fabClick(1),
               ),
               SpeedDialChild(
                 child: Icon(Icons.add, color: Colors.white, size: 20),
                 label: 'Add Health Matrix',
                 labelStyle: TextStyle(fontSize: 14),
-                backgroundColor: Colors.grey[700],
+                backgroundColor: Colors.grey[900],
                 onTap: () => _calendarKey.currentState?.fabClick(2),
               ),
             ],
