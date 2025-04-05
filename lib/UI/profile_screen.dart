@@ -6,7 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'dart:io';
 import 'dart:convert';
-
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:pulse/UI/signing_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -177,12 +177,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _logout() async {
     try {
       await _auth.signOut();
+      SharedPreferences preferences = await SharedPreferences.getInstance();
+      await preferences.clear();
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(
           builder: (context) => const SignInScreen(),
         ),
         (route) => false,
       );
+
     } catch (e) {
       _showError("Failed to log out: $e");
     }
