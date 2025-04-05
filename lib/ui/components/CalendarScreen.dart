@@ -100,54 +100,51 @@ class CalendarScreenState extends State<CalendarScreen> with SingleTickerProvide
   }
 
   void fabClick(int index) {
-    bool isPastDate = _selectedDay.microsecondsSinceEpoch < DateTime.now().microsecondsSinceEpoch;
+    DateTime now = DateTime.now();
+    DateTime today = DateTime(now.year, now.month, now.day);
+    DateTime selectedDate = DateTime(_selectedDay.year, _selectedDay.month, _selectedDay.day);
+
+    bool isPastDate = selectedDate.isBefore(today);
+    bool isFutureDate = selectedDate.isAfter(today);
 
     if (isPastDate && index < 2) {
-      // For schedules (index 0) and medications (index 1), prevent past dates
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text("Cannot add schedule or medication for past dates"),
         ),
       );
-    } else if (!isPastDate && index == 2) {
-      // For HMUI (index 2), prevent future dates
+    } else if (isFutureDate && index == 2) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text("HMUI can only be added for today or past dates"),
         ),
       );
     } else {
-      // Valid date conditions, proceed with navigation
       if (index == 0) {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ScheduleFormScreen(
-              scheduleDate: _selectedDay,
-            ),
+            builder: (context) => ScheduleFormScreen(scheduleDate: _selectedDay),
           ),
         );
       } else if (index == 1) {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => AddMedicationScreen(
-                scheduleDate: _selectedDay
-            ),
+            builder: (context) => AddMedicationScreen(scheduleDate: _selectedDay),
           ),
         );
       } else {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => AddHMUI(
-                scheduleDate: _selectedDay
-            ),
+            builder: (context) => AddHMUI(scheduleDate: _selectedDay),
           ),
         );
       }
     }
   }
+
   Widget _buildDayCell(DateTime day, {bool isSelected = false, bool isToday = false}) {
     // Create a clean DateTime for the current day (no time) for proper comparison
     DateTime dateKey = DateTime(day.year, day.month, day.day);
