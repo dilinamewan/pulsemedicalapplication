@@ -30,7 +30,10 @@ class _AppBarWidgetState extends State<AppBarWidget> {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
     final data = doc.data();
     if (data == null) return;
 
@@ -57,7 +60,8 @@ class _AppBarWidgetState extends State<AppBarWidget> {
 
       final String emergencyContactNumber = await _getEmergencyContactNumber();
 
-      final String message = 'EMERGENCY! I need help. My live location is: $liveLocationUrl';
+      final String message =
+          'EMERGENCY! I need help. My live location is: $liveLocationUrl';
 
       await _sendEmergencySMS(emergencyContactNumber, message);
 
@@ -141,48 +145,68 @@ class _AppBarWidgetState extends State<AppBarWidget> {
       elevation: 0,
       automaticallyImplyLeading: false,
       title: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          GestureDetector(
-            onTap: () => _navigateToProfile(context),
-            child: CircleAvatar(
-              radius: 16,
-              backgroundImage: avatarUrl != null
-                  ? NetworkImage(avatarUrl)
-                  : const AssetImage('assets/default_profile.png') as ImageProvider,
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () => _handleEmergency(context),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFD9534F),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              minimumSize: const Size(100, 40),
-            ),
-            child: const Text(
-              "Emergency",
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        // Left section: Avatar aligned left
+        Expanded(
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: GestureDetector(
+              onTap: () => _navigateToProfile(context),
+              child: CircleAvatar(
+                radius: 16,
+                backgroundImage: avatarUrl != null
+                    ? NetworkImage(avatarUrl)
+                    : const AssetImage('assets/default_profile.png') as ImageProvider,
               ),
             ),
           ),
-          IconButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const NotificationLogsScreen()),
-              );
-            },
-            icon: const Icon(Icons.notifications, color: Colors.white, size: 24),
+        ),
+
+        // Center section: Emergency button
+        Expanded(
+          child: Center(
+            child: ElevatedButton(
+              onPressed: () => _handleEmergency(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFD9534F),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                minimumSize: const Size(100, 40),
+              ),
+              child: const Text(
+                "Emergency",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
           ),
-        ],
-      ),
-      toolbarHeight: 56,
+        ),
+
+        // Right section: Notification icon aligned right
+        Expanded(
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: IconButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const NotificationLogsScreen()),
+                );
+              },
+              icon: const Icon(Icons.notifications, color: Colors.white, size: 24),
+            ),
+          ),
+        ),
+      ],
+    ),
+
+    toolbarHeight: 56,
     );
   }
 }

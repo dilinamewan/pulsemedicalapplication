@@ -272,7 +272,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             child: Stack(
                               children: [
                                 CircleAvatar(
-                                  radius: 70,
+                                  radius: 60,
                                   backgroundColor: Colors.grey[800],
                                   backgroundImage: _imageFile != null
                                       ? FileImage(_imageFile!) as ImageProvider

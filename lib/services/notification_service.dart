@@ -135,7 +135,7 @@ class NotificationService {
       content: NotificationContent(
         id: 100001,
         channelKey: _scheduleChannelKey,
-        title: 'Internal: Check Tomorrow Schedules',
+        title: 'Check Tomorrow Schedules',
         body: 'This is a system notification to trigger schedule checks',
         displayOnForeground: false,
         displayOnBackground: false,
@@ -162,7 +162,7 @@ class NotificationService {
       content: NotificationContent(
         id: 100002,
         channelKey: _scheduleChannelKey,
-        title: 'Internal: Check Today Schedules',
+        title: 'Check Today Schedules',
         body: 'This is a system notification to trigger schedule checks',
         displayOnForeground: false,
         displayOnBackground: false,
@@ -310,8 +310,7 @@ class NotificationService {
   // Get all notification logs
   Future<List<NotificationModel>> getNotificationLogs() async {
     try {
-      final List<NotificationModel> activeSchedules =
-      await AwesomeNotifications().listScheduledNotifications();
+      final List<NotificationModel> activeSchedules = await AwesomeNotifications().listScheduledNotifications();
       print("Active scheduled notifications: ${activeSchedules.length}");
       return activeSchedules;
     } catch (e) {

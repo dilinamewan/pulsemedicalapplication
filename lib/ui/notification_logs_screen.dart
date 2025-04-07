@@ -152,11 +152,6 @@ class _NotificationLogsScreenState extends State<NotificationLogsScreen> {
             ),
           ],
         ),
-        leading: const CircleAvatar(
-          backgroundColor: Colors.blue,
-          radius: 24, // Slightly larger avatar for more prominence
-          child: Icon(Icons.notifications, color: Colors.white, size: 20),
-        ),
         isThreeLine: true,
         trailing: IconButton(
           icon: const Icon(Icons.delete, color: Colors.red),

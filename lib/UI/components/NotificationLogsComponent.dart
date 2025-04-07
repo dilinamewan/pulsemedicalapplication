@@ -80,7 +80,7 @@ class _NotificationLogsComponentState extends State<NotificationLogsComponent> {
         : _notifications.isEmpty
         ? const Center(child: Text('No scheduled notifications'))
         : ListView.builder(
-      itemCount: _notifications.take(4).length,
+      itemCount: _notifications.take(3).length,
       itemBuilder: (context, index) {
         final notification = _notifications[index];
         return _buildNotificationItem(notification);
