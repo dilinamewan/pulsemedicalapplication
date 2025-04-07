@@ -186,7 +186,7 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
       );
       uploadFile();
 
-      Navigator.pop(context);
+      Navigator.pop(context, true);
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Schedule added successfully')),
@@ -204,6 +204,7 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter a title')),
       );
+
       return;
     }
 
@@ -211,50 +212,65 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
     String formattedDate =
         "${widget.scheduleDate.year}-${widget.scheduleDate.month.toString().padLeft(2, '0')}-${widget.scheduleDate.day.toString().padLeft(2, '0')}";
 
+
     // Create an instance of ScheduleService
     ScheduleService scheduleService = ScheduleService();
+
+
     for (var i = 0; i < docs.length; i++) {
       for (var j = 0; j < docFile.length; j++) {
         if (docs[i] != docFile[j]) {
-          await supabase.storage
-              .from('pulseapp')
-              .remove([docFile[j].split(',')[0]]);
+          String fileToRemove = docFile[j].split(',')[0];
+          await supabase.storage.from('pulseapp').remove([fileToRemove]);
         }
       }
     }
+
     if (docs.isEmpty) {
       await supabase.storage.from('pulseapp').remove([widget.scheduleId!]);
       final response = await supabase.storage
           .from('pulseapp')
           .list(path: widget.scheduleId!);
-      String fileName = response.first.name;
-      await supabase.storage
-          .from('pulseapp')
-          .remove(['${widget.scheduleId!}/$fileName']);
+
+      if (response.isNotEmpty) {
+        String fileName = response.first.name;
+
+        await supabase.storage
+            .from('pulseapp')
+            .remove(['${widget.scheduleId!}/$fileName']);
+      }
     }
 
-    // Update the schedule in the database
-    await scheduleService.updateSchedule(
-      widget.scheduleId!,
-      title,
-      formattedDate,
-      "${startTime.hour}:${startTime.minute}",
-      "${endTime.hour}:${endTime.minute}",
-      location ?? GeoPoint(0.0, 0.0),
-      alerts ?? '10m',
-      Tcolor != null
-          ? '0x${Tcolor!.value.toRadixString(16).toUpperCase()}'
-          : '0xFFFF0000',
-      notes ?? {},
-      docs,
-    );
+    try {
+      await scheduleService.updateSchedule(
+        widget.scheduleId!,
+        title,
+        formattedDate,
+        "${startTime.hour}:${startTime.minute}",
+        "${endTime.hour}:${endTime.minute}",
+        location ?? GeoPoint(0.0, 0.0),
+        alerts ?? '10m',
+        Tcolor != null
+            ? '0x${Tcolor!.value.toRadixString(16).toUpperCase()}'
+            : '0xFFFF0000',
+        notes ?? {},
+        docs,
+      );
 
-    uploadFile();
-    Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Schedule updated successfully')),
-    );
+
+      uploadFile(); // Consider awaiting if it's async
+
+      Navigator.pop(context, true);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Schedule updated successfully')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to update schedule: $e')),
+      );
+    }
   }
+
 
   Future<void> uploadFile() async {
     for (var i = 0; i < docs.length; i++) {

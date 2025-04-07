@@ -21,6 +21,9 @@ class CalendarScreenState extends State<CalendarScreen> with SingleTickerProvide
   DateTime _focusedDay = DateTime.now();
   late TabController _tabController;
 
+  // Key to force ScheduleCalenderScreen rebuild
+  final GlobalKey<ScheduleCalenderScreenState> _scheduleScreenKey = GlobalKey();
+
   @override
   void initState() {
     super.initState();
@@ -35,11 +38,17 @@ class CalendarScreenState extends State<CalendarScreen> with SingleTickerProvide
     await getMonthSchedules(_focusedDay);
     if (mounted) {
       setState(() {}); // Ensure we only call setState if widget is still mounted
-    }// Trigger UI update after fetching data
+    }
   }
 
+  // This method will refresh both the calendar and the schedule list
   void refreshCalendarData() {
-    _loadSchedules();
+    _loadSchedules(); // Refresh calendar indicators
+
+    // Refresh the ScheduleCalenderScreen if it's created
+    if (_scheduleScreenKey.currentState != null) {
+      _scheduleScreenKey.currentState!.refreshSchedules();
+    }
   }
 
   // Updated to fetch schedules for a specific month
@@ -78,7 +87,7 @@ class CalendarScreenState extends State<CalendarScreen> with SingleTickerProvide
         // Create a DateTime with year, month, day (no time) for cleaner comparison
         DateTime dateKey = DateTime(scheduleDate.year, scheduleDate.month, scheduleDate.day);
 
-        int colorValue = int.parse(data['color'].replaceFirst('#', '0xFF'));
+        int colorValue = int.parse(data['color']);
         Color color = Color(colorValue);
 
         // Limit to 3 indicators per day
@@ -138,8 +147,12 @@ class CalendarScreenState extends State<CalendarScreen> with SingleTickerProvide
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => page),
-      ).then((_) {
-        setState(() {});
+      ).then((result) {
+        // Check if a change was made (result == true)
+        if (result == true) {
+          // This will now refresh both the calendar and schedule list
+          refreshCalendarData();
+        }
       });
     }
   }
@@ -176,13 +189,13 @@ class CalendarScreenState extends State<CalendarScreen> with SingleTickerProvide
             padding: EdgeInsets.symmetric(horizontal: 7),
 
             child: Text(
-            day.day.toString(),
-            style: TextStyle(
+                day.day.toString(),
+                style: TextStyle(
 
-              color: isToday? Colors.black : Colors.white,
-              fontSize: 13, // Slightly smaller text
-              fontWeight: FontWeight.bold,
-            )),
+                  color: isToday? Colors.black : Colors.white,
+                  fontSize: 13, // Slightly smaller text
+                  fontWeight: FontWeight.bold,
+                )),
           ),
           SizedBox(height: 2), // Minimal spacing
           // Create a fixed size container for indicators
@@ -279,6 +292,7 @@ class CalendarScreenState extends State<CalendarScreen> with SingleTickerProvide
             controller: _tabController,
             children: [
               ScheduleCalenderScreen(
+                key: _scheduleScreenKey,
                 date: DateFormat('yyyy-MM-dd').format(_selectedDay),
                 onScheduleUpdated: refreshCalendarData,
               ),

@@ -5,7 +5,7 @@ import '../ScheduleFormScreen.dart';
 
 class ScheduleCalenderScreen extends StatefulWidget {
   final String date;
-  final VoidCallback? onScheduleUpdated; // Add this callback parameter
+  final VoidCallback? onScheduleUpdated; // Callback parameter
 
   const ScheduleCalenderScreen({
     super.key,
@@ -14,10 +14,10 @@ class ScheduleCalenderScreen extends StatefulWidget {
   });
 
   @override
-  _ScheduleCalenderScreenState createState() => _ScheduleCalenderScreenState();
+  ScheduleCalenderScreenState createState() => ScheduleCalenderScreenState();
 }
 
-class _ScheduleCalenderScreenState extends State<ScheduleCalenderScreen> {
+class ScheduleCalenderScreenState extends State<ScheduleCalenderScreen> {
   final ScheduleService _scheduleService = ScheduleService();
   List<Schedule> _schedules = [];
   bool _isLoading = false;
@@ -46,10 +46,13 @@ class _ScheduleCalenderScreenState extends State<ScheduleCalenderScreen> {
     });
     List<Schedule> schedules = await _scheduleService.getSchedule(widget.date);
 
-    setState(() {
-      _schedules = schedules;
-      _isLoading = false;
-    });
+    // Only update state if the widget is still mounted
+    if (mounted) {
+      setState(() {
+        _schedules = schedules;
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -60,95 +63,99 @@ class _ScheduleCalenderScreenState extends State<ScheduleCalenderScreen> {
 
     return _schedules.isEmpty
         ? const Center(
-            child: Text(
-            "No schedules found",
-            style: TextStyle(color: Colors.white),
-          ))
+        child: Text(
+          "No schedules found",
+          style: TextStyle(color: Colors.white),
+        ))
         : ListView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            itemCount: _schedules.length,
-            itemBuilder: (context, index) {
-              final schedule = _schedules[index];
-              return Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                decoration: BoxDecoration(
-                  color: Colors.white10, // Dark gray background for list items
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: InkWell(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ScheduleFormScreen(
-                          scheduleId: schedule.scheduleId,
-                          scheduleDate: DateTime.parse(schedule.date),
-                        ),
-                      ),
-                    ).then((_) {
-                      _fetchSchedules();
-
-                      // Call the parent's refresh callback if provided
-                      if (widget.onScheduleUpdated != null) {
-                        widget.onScheduleUpdated!();
-                      }
-                    });
-                  },
-                  borderRadius: BorderRadius.circular(12),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 8,
-                        height: 80,
-                        decoration: BoxDecoration(
-                          color: Color(int.parse(schedule.color)),
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(12),
-                            bottomLeft: Radius.circular(12),
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Expanded( // 👈 Wrap the Text with Expanded
-                                    child: Text(
-                                      schedule.title,
-                                      style: TextStyle(color: Colors.white),
-                                      overflow: TextOverflow.ellipsis,
-                                      maxLines: 1,
-                                      softWrap: false,
-                                    ),
-                                  ),
-                                  IconButton(
-                                    icon: Icon(Icons.delete_outline, color: Colors.red),
-                                    alignment: Alignment.centerRight,
-                                    onPressed: () {
-                                      _scheduleService.deleteSchedule(schedule.scheduleId).then((_) {
-                                        refreshSchedules();
-                                        if (widget.onScheduleUpdated != null) {
-                                          widget.onScheduleUpdated!();
-                                        }
-                                      });
-                                    },
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      itemCount: _schedules.length,
+      itemBuilder: (context, index) {
+        final schedule = _schedules[index];
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: Colors.white10, // Dark gray background for list items
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ScheduleFormScreen(
+                    scheduleId: schedule.scheduleId,
+                    scheduleDate: DateTime.parse(schedule.date),
                   ),
                 ),
-              );
+              ).then((result) {
+                // Check if a change was made (result == true)
+                if (result == true) {
+                  // First refresh this component's data
+                  _fetchSchedules();
+
+                  // Then call the parent's refresh callback if provided
+                  if (widget.onScheduleUpdated != null) {
+                    widget.onScheduleUpdated!();
+                  }
+                }
+              });
             },
-          );
+            borderRadius: BorderRadius.circular(12),
+            child: Row(
+              children: [
+                Container(
+                  width: 8,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: Color(int.parse(schedule.color)),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(12),
+                      bottomLeft: Radius.circular(12),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                schedule.title,
+                                style: TextStyle(color: Colors.white),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                                softWrap: false,
+                              ),
+                            ),
+                            IconButton(
+                              icon: Icon(Icons.delete_outline, color: Colors.red),
+                              alignment: Alignment.centerRight,
+                              onPressed: () {
+                                _scheduleService.deleteSchedule(schedule.scheduleId).then((_) {
+                                  refreshSchedules();
+                                  if (widget.onScheduleUpdated != null) {
+                                    widget.onScheduleUpdated!();
+                                  }
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 }
