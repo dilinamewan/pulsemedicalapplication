@@ -48,7 +48,7 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
             ),
             const SizedBox(height: 7),
-            PillStyleTableCalendar(),
+            PillStyleWeekCalendar(),
             const SizedBox(height: 7),
             Text("Health Matrix"),
             const SizedBox(height: 7),

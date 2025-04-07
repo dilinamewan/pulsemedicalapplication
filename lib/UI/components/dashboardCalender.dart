@@ -1,50 +1,64 @@
 import 'package:flutter/material.dart';
-import 'package:table_calendar/table_calendar.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-class PillStyleTableCalendar extends StatefulWidget {
-  const PillStyleTableCalendar({super.key});
+class PillStyleWeekCalendar extends StatefulWidget {
+  const PillStyleWeekCalendar({super.key});
 
   @override
-  _PillStyleTableCalendarState createState() => _PillStyleTableCalendarState();
+  State<PillStyleWeekCalendar> createState() => _PillStyleWeekCalendarState();
 }
 
-class _PillStyleTableCalendarState extends State<PillStyleTableCalendar> {
-  DateTime selectedDate = DateTime.now();
-  DateTime focusedDate = DateTime.now();
-  CalendarFormat calendarFormat = CalendarFormat.week;
-  Map<int, List<Color>> dateIndicators = {};
+class _PillStyleWeekCalendarState extends State<PillStyleWeekCalendar> {
+  List<DateTime> weekDays = [];
+  DateTime today = DateTime.now();
+  Map<String, List<Color>> dateIndicators = {};
 
   @override
   void initState() {
     super.initState();
-    _loadSchedules();
+    _generateWeekDays();
+    _loadWeekSchedules();
   }
 
-  Future<void> _loadSchedules() async {
-    await getWeekdaySchedules();
-    if (mounted) {
-      setState(() {}); // Ensure we only call setState if widget is still mounted
+  void _generateWeekDays() {
+    // Find Monday of the current week
+    final monday = today.subtract(Duration(days: today.weekday - 1));
+
+    // If today is Sunday (weekday == 7), it subtracts 6, which makes the week start from Monday
+    if (today.weekday == 7) {
+      weekDays = List.generate(7, (i) => monday.add(Duration(days: i)));
+    } else {
+      weekDays = List.generate(7, (i) => monday.add(Duration(days: i)));
     }
+
+    // Debugging: Print the generated week days
+    print('Generated Week Days:');
+    weekDays.forEach((date) {
+      print(date.toString());
+    });
   }
 
-  void refreshCalendarData() {
-    _loadSchedules();
-  }
-
-  Future<void> getWeekdaySchedules() async {
+  Future<void> _loadWeekSchedules() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       print('User not logged in.');
       return;
     }
 
-    final FirebaseFirestore firestore = FirebaseFirestore.instance;
+    final firestore = FirebaseFirestore.instance;
 
-    DateTime now = DateTime.now();
-    DateTime startOfWeek = now.subtract(Duration(days: now.weekday-1));
-    DateTime endOfWeek = startOfWeek.add(Duration(days: 6));
+    DateTime start = weekDays.first;
+    DateTime end = weekDays.last;
+
+    // Set start time to 00:00:00.000000 (midnight)
+    start = DateTime(start.year, start.month, start.day, 0, 0, 0, 0, 0);
+
+    // Set end time to 23:59:59.999999 (just before midnight)
+    end = DateTime(end.year, end.month, end.day, 23, 59, 59, 999, 999);
+
+    // Debugging: Print the start and end dates
+    print('Start: $start, End: $end');
 
     QuerySnapshot schedules = await firestore
         .collection('users')
@@ -52,28 +66,38 @@ class _PillStyleTableCalendarState extends State<PillStyleTableCalendar> {
         .collection('schedules')
         .get();
 
-    Map<int, List<Color>> tempIndicators = {};
+    // Debugging: Print the fetched schedule data
+    print('Fetched Schedules: ${schedules.docs.length} documents');
+
+    Map<String, List<Color>> tempIndicators = {};
 
     for (var doc in schedules.docs) {
-      Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+      final data = doc.data() as Map<String, dynamic>;
+
+      // Debugging: Print the schedule data being processed
+      print('Processing schedule data: $data');
 
       if (!data.containsKey('date') || !data.containsKey('color')) continue;
 
       try {
-        DateTime scheduleDate = DateTime.parse(data['date']);
-        if (scheduleDate.isBefore(startOfWeek) || scheduleDate.isAfter(endOfWeek)) continue;
+        final scheduleDate = DateTime.parse(data['date']);
+        print('Checking schedule for date: $scheduleDate'); // Debugging line
 
-        int dayOfMonth = scheduleDate.day;
-        int colorValue = int.parse(data['color'].replaceFirst('#', '0xFF'));
-        Color color = Color(colorValue);
-
-        // Limit to 3 indicators per day
-        if (!tempIndicators.containsKey(dayOfMonth)) {
-          tempIndicators[dayOfMonth] = [];
+        if (scheduleDate.isBefore(start) || scheduleDate.isAfter(end)) {
+          print('Skipping date: $scheduleDate'); // Debugging line
+          continue;
         }
 
-        if (tempIndicators[dayOfMonth]!.length < 3) {
-          tempIndicators[dayOfMonth]!.add(color);
+        final key = "${scheduleDate.year}-${scheduleDate.month}-${scheduleDate.day}";
+        final colorValue = int.parse(data['color'].replaceFirst('#', '0xFF'));
+        final color = Color(colorValue);
+
+        if (!tempIndicators.containsKey(key)) {
+          tempIndicators[key] = [];
+        }
+
+        if (tempIndicators[key]!.length < 3) {
+          tempIndicators[key]!.add(color);
         }
       } catch (e) {
         print("Error processing schedule: $e");
@@ -83,80 +107,75 @@ class _PillStyleTableCalendarState extends State<PillStyleTableCalendar> {
     setState(() {
       dateIndicators = tempIndicators;
     });
+
+    // Debugging: Print the final dateIndicators
+    print('Date Indicators: $dateIndicators');
   }
+
+
 
   @override
   Widget build(BuildContext context) {
-    DateTime now = DateTime.now();
-    DateTime startOfWeek = now.subtract(Duration(days: now.weekday-1));
-    DateTime endOfWeek = startOfWeek.add(Duration(days: 6));
-
-    return Container(
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(16)),
-      padding: EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TableCalendar(
-            firstDay: DateTime.utc(2000, 1, 1),
-            lastDay: DateTime.utc(2100, 12, 31),
-            focusedDay: focusedDate,
-            calendarFormat: CalendarFormat.week,
-            daysOfWeekVisible: false,
-            calendarBuilders: CalendarBuilders(
-              defaultBuilder: (context, day, focusedDay) => _buildDayCell(day),
-              selectedBuilder: (context, day, focusedDay) => _buildDayCell(day, isSelected: true),
-              todayBuilder: (context, day, focusedDay) => _buildDayCell(day, isToday: true),
-            ),
-            calendarStyle: CalendarStyle(outsideDaysVisible: false),
-            headerVisible: false,
-            selectedDayPredicate: (day) => isSameDay(selectedDate, day),
-            onDaySelected: (selectedDay, focusedDay) {
-              setState(() {
-                selectedDate = selectedDay;
-                focusedDate = focusedDay;
-              });
-            },
-            rowHeight: 80,
-          ),
-        ],
+    return SizedBox(
+      height: 90,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: weekDays.map((date) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: _buildDayPill(date),
+            );
+          }).toList(),
+        ),
       ),
     );
   }
 
-  Widget _buildDayCell(DateTime day, {bool isSelected = false, bool isToday = false}) {
+  Widget _buildDayPill(DateTime day) {
+    bool isToday = _isSameDay(day, today);
+    String key = "${day.year}-${day.month}-${day.day}";
+    List<Color> indicators = dateIndicators[key] ?? [];
 
     return Container(
-      width: 30,
-      height: 80,
-      margin: EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+      width: 35,
+      height: 75,
       decoration: BoxDecoration(
-        color: isSelected ? Colors.white : Colors.transparent,
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: Colors.grey.withOpacity(0.5), width: 1),
+        color: isToday ? Colors.white70 : Colors.transparent,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Colors.grey.withOpacity(0.5),
+          width: 1,
+        ),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          SizedBox(height: 12),
+          const SizedBox(height: 8),
           Text(
             day.day.toString(),
             style: TextStyle(
-              color: isSelected ? Colors.black : (isToday ? Colors.blue : Colors.white),
-              fontSize: 14,
+              color: isToday ? Colors.black : Colors.white,
               fontWeight: FontWeight.bold,
+              fontSize: 16,
             ),
           ),
-          SizedBox(height: 4),
-          if (dateIndicators.containsKey(day.day))
-            ...dateIndicators[day.day]!.map((color) => Container(
-              margin: EdgeInsets.symmetric(vertical: 1),
-              width: 20,
-              height: 4,
-              decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2)),
-            )),
+          const SizedBox(height: 4),
+          ...indicators.map((color) => Container(
+            margin: const EdgeInsets.symmetric(vertical: 1),
+            width: 20,
+            height: 4,
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          )),
         ],
       ),
     );
+  }
+
+  bool _isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 }
