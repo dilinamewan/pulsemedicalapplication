@@ -1,6 +1,4 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_ai_toolkit/flutter_ai_toolkit.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
@@ -39,15 +37,7 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Future<void> _loadFileContent() async {
-    Directory appDocDir = await getApplicationDocumentsDirectory();
-    String filePath = '${appDocDir.path}/data.md';
-    File markdownFile = File(filePath);
 
-    if (await markdownFile.exists()) {
-      fileContent = await markdownFile.readAsString();
-    } else {
-      fileContent = "";
-    }
   }
 
   void _initializeProvider() {
@@ -117,8 +107,7 @@ class _ChatPageState extends State<ChatPage> {
 
     return Scaffold(
         body: LlmChatView(
-          // enableAttachments: false,
-          // enableVoiceNotes: false,
+          enableAttachments: false,
       welcomeMessage:
       "Welcome to Pulse Chat, where you can analyze your medical reports",
       provider: _provider!,

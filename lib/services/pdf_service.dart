@@ -1,13 +1,120 @@
-import 'dart:io';
 import 'package:dio/dio.dart';
-import 'package:crypto/crypto.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import 'dart:typed_data';
+import 'package:archive/archive.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 
+class _ParsingJob {
+  final String filePath;
+  final String fileName;
+  final String apiKey;
+  final String baseUrl;
+
+  _ParsingJob({
+    required this.filePath,
+    required this.fileName,
+    required this.apiKey,
+    required this.baseUrl,
+  });
+
+  // Static method that will run in a separate isolate
+  static Future<Map<String, dynamic>> parse(_ParsingJob job) async {
+    try {
+      final dio = Dio();
+      dio.options.headers['Authorization'] = 'Bearer ${job.apiKey}';
+
+      // Create multipart request
+      final file = await MultipartFile.fromFile(
+        job.filePath,
+        filename: job.fileName,
+        contentType: DioMediaType('multipart', 'form-data'),
+      );
+
+      final formData = FormData.fromMap({
+        'file': file,
+      });
+
+      // Upload file to parsing service
+      final uploadUrl = '${job.baseUrl}/upload';
+      final uploadResponse = await dio.post(uploadUrl, data: formData);
+
+      if (uploadResponse.statusCode != 200) {
+        return {
+          'success': false,
+          'error': 'File upload failed with status: ${uploadResponse.statusCode}'
+        };
+      }
+
+      final jobId = uploadResponse.data['id'];
+      final resultUrl = '${job.baseUrl}/job/$jobId/result/markdown';
+
+      // Poll for results
+      int retries = 0;
+      const maxRetries = 10;
+      const delay = Duration(seconds: 10);
+
+      while (retries < maxRetries) {
+        try {
+          final resultResponse = await dio.get(resultUrl);
+
+          if (resultResponse.statusCode == 200 && resultResponse.data.containsKey('markdown')) {
+            var markdownContent = resultResponse.data["markdown"];
+
+            // Return the parsed content
+            return {
+              'success': true,
+              'markdown': markdownContent,
+              'fileName': job.fileName
+            };
+          }
+
+          // If we get here, the job is still processing
+          retries++;
+          await Future.delayed(delay);
+
+        } catch (e) {
+          if (e is DioException && e.response?.statusCode == 404) {
+            // Job still processing, wait and retry
+            retries++;
+            if (retries >= maxRetries) {
+              return {
+                'success': false,
+                'error': 'Document parsing timed out after $maxRetries attempts'
+              };
+            }
+            await Future.delayed(delay);
+          } else {
+            // Some other error occurred
+            return {
+              'success': false,
+              'error': 'Error retrieving parsing results: ${e.toString()}'
+            };
+          }
+        }
+      }
+
+      return {
+        'success': false,
+        'error': 'Document parsing timed out after $maxRetries attempts'
+      };
+
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Error parsing document: ${e.toString()}'
+      };
+    }
+  }
+}
 
 class DocumentParser {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  // Get current user ID
+  String get _userId => _auth.currentUser?.uid ?? '';
 
   static final DocumentParser _instance = DocumentParser._internal();
   late final Dio _dio;
@@ -23,96 +130,151 @@ class DocumentParser {
     return _instance;
   }
 
-  Future<String?> parseDocument() async {
+  /// Compresses a string using GZip encoding
+  Uint8List compressString(String input) {
+    final bytes = utf8.encode(input);
+    final compressed = GZipEncoder().encode(bytes);
+    return Uint8List.fromList(compressed!);
+  }
+
+  /// Decompresses a byte array back to a string
+  String decompressString(Uint8List compressedData) {
+    final decompressed = GZipDecoder().decodeBytes(compressedData);
+    return utf8.decode(decompressed);
+  }
+
+  /// Parses a document file in the background and stores the result in Firestore
+  /// Returns the document ID and markdown content on success
+  Future<Map<String, dynamic>> parseDocument(dynamic result) async {
     try {
-      final result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['pdf']);
-      if (result == null) {
-        throw Exception("No file selected");
-      }
-
       final filePath = result.files.single.path!;
+      final fileName = filePath.split('/').last;
 
-      if(await isAlreadyParsed(File(filePath))){
-        return null;
-      }
-
-      final file = await MultipartFile.fromFile(
-        filePath,
-        filename: filePath.split('/').last,
-        contentType: DioMediaType('multipart', 'form-data'),
+      // Prepare the job for background processing
+      final job = _ParsingJob(
+        filePath: filePath,
+        fileName: fileName,
+        apiKey: _apiKey,
+        baseUrl: _baseUrl,
       );
 
-      final formData = FormData.fromMap({
-        'file': file,
-      });
+      // Process in background isolate
+      final parsingResult = await compute(_ParsingJob.parse, job);
 
-      final uploadUrl = '$_baseUrl/upload';
-      final uploadResponse = await _dio.post(uploadUrl, data: formData);
-      final jobId = uploadResponse.data['id'];
-      final resultUrl = '$_baseUrl/job/$jobId/result/markdown';
-      Response resultResponse;
+      // If parsing was successful, store the result in Firestore
+      if (parsingResult['success']) {
+        String markdownContent = parsingResult['markdown'];
+        Uint8List compressedMarkdown = compressString(markdownContent);
 
-      int retries = 0;
-      const maxRetries = 5;
-      const delay = Duration(seconds: 30);
+        // Get the filename without extension
+        String docName = fileName.split('.').first;
 
-      while (retries < maxRetries) {
-        try {
-          resultResponse = await _dio.get(resultUrl);
-          Directory appDocDir = await getApplicationDocumentsDirectory();
-          String filePath = '${appDocDir.path}/data.md';
-          File markdownFile = File(filePath);
-          var markdownContent =  resultResponse.data["markdown"];
-          if (await markdownFile.exists()) {
-            String separator = '\n\n------------------------------------\n\n';
-            await markdownFile.writeAsString('$separator$markdownContent', mode: FileMode.append);
-          } else {
-            await markdownFile.writeAsString(markdownContent);
-          }
-        } catch (e) {
-          retries++;
-          if (retries >= maxRetries) {
-            throw Exception('Failed to retrieve result after $maxRetries retries');
-          }
-          await Future.delayed(delay);
-        }
+        // This code will change in future
+        String docId = '${docName}_${DateTime.now().millisecondsSinceEpoch}';
+
+        // Store in Firestore
+        await _firestore.collection('users')
+            .doc(_userId)
+            .collection('documents')
+            .doc(docId)
+            .set({
+          'compressedContent': compressedMarkdown,
+        });
+
+        // Return success result
+        return {
+          'success': true,
+          'documentId': docId,
+          'markdown': markdownContent,
+          'fileName': fileName
+        };
+      } else {
+        // Return the error from the background process
+        return parsingResult;
       }
 
-      throw Exception('Unknown error occurred during document parsing');
-
     } catch (e) {
-      throw Exception('Error parsing document: $e');
+      return {
+        'success': false,
+        'error': 'Error in document processing: ${e.toString()}'
+      };
     }
   }
 
-  Future<String> getMd5Hash(File file) async {
-    List<int> fileBytes = await file.readAsBytes();
-    return md5.convert(fileBytes).toString();
+  /// Retrieves a parsed document from Firestore by ID
+  Future<String?> getDocument(String documentId) async {
+    try {
+      final docSnapshot = await _firestore
+          .collection('users')
+          .doc(_userId)
+          .collection('documents')
+          .doc(documentId)
+          .get();
+
+      if (docSnapshot.exists && docSnapshot.data()!.containsKey('compressedContent')) {
+        Uint8List compressedContent = docSnapshot.data()!['compressedContent'];
+        return decompressString(compressedContent);
+      }
+
+      return null;
+    } catch (e) {
+      throw Exception('Error retrieving document: ${e.toString()}');
+    }
   }
 
-  Future<bool> isAlreadyParsed(File file) async {
-    final prefs = await SharedPreferences.getInstance();
-    final String fileMd5 = await getMd5Hash(file);
+  /// Retrieves all documents for the current user
+  Future<List<Map<String, dynamic>>> getAllDocuments() async {
+    try {
+      final querySnapshot = await _firestore
+          .collection('users')
+          .doc(_userId)
+          .collection('documents')
+          .orderBy('createdAt', descending: true)
+          .get();
 
-    List<String> storedMd5s = prefs.getStringList('md5_list') ?? [];
+      return querySnapshot.docs.map((doc) {
+        var data = doc.data();
+        // Remove the compressed content from the list view for efficiency
+        data.remove('compressedContent');
+        data['id'] = doc.id;
+        return data;
+      }).toList();
+    } catch (e) {
+      throw Exception('Error retrieving documents: ${e.toString()}');
+    }
+  }
 
-    if (storedMd5s.contains(fileMd5)) {
-      return true;
-    } else {
-      storedMd5s.add(fileMd5);
-      await prefs.setStringList('md5_list', storedMd5s);
-      return false;
+  /// Deletes a document from Firestore
+  Future<void> deleteDocument(String documentId) async {
+    try {
+      await _firestore
+          .collection('users')
+          .doc(_userId)
+          .collection('documents')
+          .doc(documentId)
+          .delete();
+    } catch (e) {
+      throw Exception('Error deleting document: ${e.toString()}');
+    }
+  }
 
-  }}
-
+  /// Clears all documents for the current user
   Future<void> clearData() async {
-    Directory appDocDir = await getApplicationDocumentsDirectory();
-    String filePath = '${appDocDir.path}/data.md';
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('md5_list');
-    File file = File(filePath);
-    if (await file.exists()) {
-      await file.delete();
+    try {
+      final batch = _firestore.batch();
+      final documents = await _firestore
+          .collection('users')
+          .doc(_userId)
+          .collection('documents')
+          .get();
+
+      for (var doc in documents.docs) {
+        batch.delete(doc.reference);
+      }
+
+      await batch.commit();
+    } catch (e) {
+      throw Exception('Error clearing data: ${e.toString()}');
     }
   }
 

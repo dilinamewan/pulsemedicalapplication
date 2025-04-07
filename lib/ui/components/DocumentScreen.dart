@@ -9,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:mime/mime.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
+import 'package:pulse/services/pdf_service.dart';
 
 class DocumentScreen extends StatefulWidget {
   final String scheduleId;
@@ -61,11 +62,13 @@ class _DocumentScreenState extends State<DocumentScreen> {
 
   Future<void> uploadFile() async {
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles();
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+      );
 
       if (result != null) {
         PlatformFile file = result.files.first;
-
         String fileName = '${widget.scheduleId}/${file.name}';
 
 
