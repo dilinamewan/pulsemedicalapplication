@@ -6,41 +6,71 @@ import 'package:pulse/UI/profile_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
+class AppBarWidget extends StatefulWidget implements PreferredSizeWidget {
   const AppBarWidget({super.key});
 
-  // Handle Emergency Button Click
+  @override
+  State<AppBarWidget> createState() => _AppBarWidgetState();
+
+  @override
+  Size get preferredSize => const Size.fromHeight(56);
+}
+
+class _AppBarWidgetState extends State<AppBarWidget> {
+  String? _profileImageUrl;
+  String? _fullName;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+    final data = doc.data();
+    if (data == null) return;
+
+    setState(() {
+      _profileImageUrl = data['profileImageUrl'];
+      _fullName = data['fullName'];
+    });
+  }
+
+  Future<void> _navigateToProfile(BuildContext context) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const ProfileScreen()),
+    );
+    await _loadUserData(); // Refresh data after returning
+  }
+
   Future<void> _handleEmergency(BuildContext context) async {
     try {
-      // Get live location
       final Position position = await _getLiveLocation();
 
-      // Generate Google Maps URL
       final String liveLocationUrl =
           'https://www.google.com/maps/search/?api=1&query=${position.latitude},${position.longitude}';
 
-      // Get emergency contact number from Firestore
       final String emergencyContactNumber = await _getEmergencyContactNumber();
 
-      // Prepare SMS message with the Google Maps URL
       final String message = 'EMERGENCY! I need help. My live location is: $liveLocationUrl';
 
-      // Send SMS
       await _sendEmergencySMS(emergencyContactNumber, message);
 
-      // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Emergency SMS sent!')),
+        const SnackBar(content: Text('Emergency SMS sent!')),
       );
     } catch (e) {
-      // Handle errors
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $e')),
       );
     }
   }
 
-  // Get Live Location
   Future<Position> _getLiveLocation() async {
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
@@ -62,51 +92,50 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
     return await Geolocator.getCurrentPosition();
   }
 
-  // Send SMS
-  Future<void> _sendEmergencySMS(String emergencyContactNumber, String message) async {
+  Future<void> _sendEmergencySMS(String number, String message) async {
     final Uri smsUri = Uri(
       scheme: 'sms',
-      path: emergencyContactNumber,
+      path: number,
       queryParameters: {'body': message},
     );
 
-    if (await canLaunch(smsUri.toString())) {
-      await launch(smsUri.toString());
+    if (await canLaunchUrl(smsUri)) {
+      await launchUrl(smsUri);
     } else {
       throw Exception('Could not launch SMS.');
     }
   }
 
-  // Get Emergency Contact Number from Firestore
   Future<String> _getEmergencyContactNumber() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       throw Exception('User not logged in.');
     }
 
-    print('Current User UID: ${user.uid}'); // Debug log
-
-    // Query Firestore using the uid field
     final querySnapshot = await FirebaseFirestore.instance
         .collection('users')
         .where('uid', isEqualTo: user.uid)
         .get();
 
-    print('Firestore Query Results: ${querySnapshot.docs}'); // Debug log
-
     if (querySnapshot.docs.isEmpty) {
-      print('User document not found in Firestore.'); // Debug log
       throw Exception('User data not found.');
     }
 
     final userDoc = querySnapshot.docs.first;
-    print('User document found: ${userDoc.data()}'); // Debug log
-
     return userDoc['emergencyContactNumber'];
   }
 
   @override
   Widget build(BuildContext context) {
+    String? avatarUrl;
+
+    if (_profileImageUrl != null && _profileImageUrl!.isNotEmpty) {
+      avatarUrl = _profileImageUrl!;
+    } else if (_fullName != null && _fullName!.isNotEmpty) {
+      final encodedName = Uri.encodeComponent(_fullName!);
+      avatarUrl = 'https://ui-avatars.com/api/?name=$encodedName';
+    }
+
     return AppBar(
       backgroundColor: Colors.black,
       elevation: 0,
@@ -115,21 +144,16 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => ProfileScreen()),
-              );
-            },
+            onTap: () => _navigateToProfile(context),
             child: CircleAvatar(
               radius: 16,
-              backgroundImage: const AssetImage('assets/default_profile.png'),
+              backgroundImage: avatarUrl != null
+                  ? NetworkImage(avatarUrl)
+                  : const AssetImage('assets/default_profile.png') as ImageProvider,
             ),
           ),
           ElevatedButton(
-            onPressed: () async {
-              await _handleEmergency(context);
-            },
+            onPressed: () => _handleEmergency(context),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFD9534F),
               shape: RoundedRectangleBorder(
@@ -141,9 +165,9 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
             child: const Text(
               "Emergency",
               style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ),
@@ -151,21 +175,14 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => NotificationLogsScreen()),
+                MaterialPageRoute(builder: (context) => const NotificationLogsScreen()),
               );
             },
-            icon: const Icon(
-                Icons.notifications,
-                color: Colors.white,
-                size: 24
-            ),
+            icon: const Icon(Icons.notifications, color: Colors.white, size: 24),
           ),
         ],
       ),
       toolbarHeight: 56,
     );
   }
-
-  @override
-  Size get preferredSize => const Size.fromHeight(56);
 }

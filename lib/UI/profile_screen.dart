@@ -200,6 +200,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    String? avatarUrl;
+
+    if (_profileImageUrl != null && _profileImageUrl!.isNotEmpty) {
+      avatarUrl = _profileImageUrl!;
+    } else if (_fullNameController.text != null && _fullNameController.text.isNotEmpty) {
+      final encodedName = Uri.encodeComponent(_fullNameController.text);
+      avatarUrl = 'https://ui-avatars.com/api/?name=$encodedName';
+    }
+
     final ThemeData darkTheme = ThemeData(
       brightness: Brightness.dark,
       primarySwatch: Colors.blue,
@@ -267,8 +276,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   backgroundColor: Colors.grey[800],
                                   backgroundImage: _imageFile != null
                                       ? FileImage(_imageFile!) as ImageProvider
-                                      : _profileImageUrl != null
-                                          ? NetworkImage(_profileImageUrl!)
+                                      : avatarUrl != null
+                                          ? NetworkImage(avatarUrl!)
                                           : const AssetImage(
                                               'assets/default_profile.png'),
                                 ),
