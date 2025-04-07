@@ -95,14 +95,6 @@ class _NotificationLogsScreenState extends State<NotificationLogsScreen> {
             icon: const Icon(Icons.refresh),
             onPressed: _loadNotifications,
           ),
-          IconButton(
-            icon: const Icon(Icons.add_alert),
-            onPressed: () {
-              _notificationService.sendTestNotification();
-              Future.delayed(const Duration(seconds: 1), _loadNotifications);
-            },
-            tooltip: 'Send test notification',
-          ),
         ],
       ),
       body: _isLoading
@@ -120,62 +112,50 @@ class _NotificationLogsScreenState extends State<NotificationLogsScreen> {
   }
 
   Widget _buildNotificationItem(NotificationModel notification) {
-    final medicationId = notification.content?.payload?['medicationId'] ?? 'Unknown';
-    
-    // Extract date from schedule string if available
-    String scheduleInfo = 'Schedule information not available';
-    if (notification.schedule != null) {
-      final scheduleStr = notification.schedule.toString();
-      scheduleInfo = 'Raw schedule: $scheduleStr';
-      
-      // Try to extract date with regex if it contains a date pattern
-      try {
-        RegExp dateRegex = RegExp(r'(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})');
-        final match = dateRegex.firstMatch(scheduleStr);
-        
-        if (match != null && match.groupCount >= 5) {
-          final year = int.parse(match.group(1)!);
-          final month = int.parse(match.group(2)!);
-          final day = int.parse(match.group(3)!);
-          final hour = int.parse(match.group(4)!);
-          final minute = int.parse(match.group(5)!);
-          
-          final dateTime = DateTime(year, month, day, hour, minute);
-          final dateFormat = DateFormat('MMM d, yyyy');
-          final timeFormat = DateFormat('h:mm a');
-          
-          scheduleInfo = 'Scheduled for: ${dateFormat.format(dateTime)} at ${timeFormat.format(dateTime)}';
-        }
-      } catch (e) {
-        print('Error extracting date from string: $e');
-      }
+    String scheduleInfo = 'No schedule info';
+
+    if (notification.schedule is NotificationCalendar) {
+      final schedule = notification.schedule as NotificationCalendar;
+      final hour = schedule.hour ?? 0;
+      final minute = schedule.minute ?? 0;
+
+      final time = TimeOfDay(hour: hour, minute: minute);
+      scheduleInfo = 'Scheduled for: ${time.format(context)}';
     }
-    
+
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      elevation: 4, // Adds subtle shadow to the card
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12), // Rounded corners for a more modern look
+      ),
       child: ListTile(
-        title: Text(notification.content?.title ?? 'No title'),
+        title: Text(
+          notification.content?.title ?? 'No title',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+
+          ),
+        ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(notification.content?.body ?? 'No body'),
+            SizedBox(height: 4), // Small space between body text and schedule info
             Text(
               scheduleInfo,
-              style: TextStyle(color: Colors.grey[600]),
-            ),
-            Text(
-              'Medication ID: $medicationId',
-              style: TextStyle(color: Colors.grey[600], fontSize: 12),
-            ),
-            Text(
-              'Notification ID: ${notification.content?.id}',
-              style: TextStyle(color: Colors.grey[600], fontSize: 12),
+              style: TextStyle(
+
+                fontSize: 12,
+                fontStyle: FontStyle.italic, // To differentiate schedule info
+              ),
             ),
           ],
         ),
         leading: const CircleAvatar(
           backgroundColor: Colors.blue,
-          child: Icon(Icons.notifications, color: Colors.white),
+          radius: 24, // Slightly larger avatar for more prominence
+          child: Icon(Icons.notifications, color: Colors.white, size: 20),
         ),
         isThreeLine: true,
         trailing: IconButton(
@@ -185,8 +165,11 @@ class _NotificationLogsScreenState extends State<NotificationLogsScreen> {
             _loadNotifications();
           },
           tooltip: 'Cancel notification',
+          iconSize: 24, // Larger delete icon for better touch targets
         ),
       ),
     );
   }
+
+
 }
