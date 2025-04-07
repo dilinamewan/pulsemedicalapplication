@@ -44,7 +44,7 @@ class MedicationService {
       
     // Schedule notifications for each reminder time
     for (int i = 0; i < medication.reminderTimes.length; i++) {
-      await _notificationService.scheduleNotification(
+      await _notificationService.scheduleMedicationNotification(
         medication.id,
         i,
         medication.name,
@@ -59,11 +59,11 @@ class MedicationService {
     await _medicationsCollection.doc(medication.id).update(medication.toMap());
       
     // Cancel existing notifications and reschedule
-    await _notificationService.cancelNotifications(medication.id);
+    await _notificationService.cancelMedicationNotifications(medication.id);
       
     // Schedule new notifications
     for (int i = 0; i < medication.reminderTimes.length; i++) {
-      await _notificationService.scheduleNotification(
+      await _notificationService.scheduleMedicationNotification(
         medication.id,
         i,
         medication.name,
@@ -79,7 +79,7 @@ class MedicationService {
       await _medicationsCollection.doc(medicationId).delete();
       
       // Cancel notifications
-      await _notificationService.cancelNotifications(medicationId);
+      await _notificationService.cancelMedicationNotifications(medicationId);
     } catch (e) {
       throw Exception('Failed to delete medication: $e');
     }
