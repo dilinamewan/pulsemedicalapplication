@@ -274,7 +274,8 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
 
   Future<void> uploadFile() async {
     for (var i = 0; i < docs.length; i++) {
-      String filePath = docs[i].split(',')[1];
+      String filePath = '${widget.scheduleId}/${docs[i].split(',')[0].split('/')[1]}';
+
       File fileToUpload = File(filePath);
       print(filePath);
 
