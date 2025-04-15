@@ -212,8 +212,10 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
 
       List<String> secondPaths = extractSecondPaths(docs);
       for (var path in secondPaths) {
-        final parser = DocumentParser();
-        await parser.parseDocument(path, customid!);
+        if (path.toLowerCase().endsWith('.pdf')) {
+          final parser = DocumentParser();
+          await parser.parseDocument(path, customid!);
+        }
       }
 
       await uploadFile();
@@ -319,7 +321,9 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
       parser.deletepdf(widget.scheduleId!);
       List<String> secondPaths = extractSecondPaths(docs);
       for (var path in secondPaths) {
-        await parser.parseDocument(path, widget.scheduleId!);
+        if (path.toLowerCase().endsWith('.pdf')) {
+          await parser.parseDocument(path, widget.scheduleId!);
+        }
       }
 
       // Upload any new files
