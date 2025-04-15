@@ -4,11 +4,14 @@ class Medication {
   final String id;
   final String name;
   final String category;
-  final int frequency; // How many times per day
-  final List<DateTime> reminderTimes; // Multiple reminder times
-  final List<bool> takenStatus; // Status for each reminder time
+  final int frequency;
+  final List<DateTime> reminderTimes;
+  final List<bool> takenStatus;
   final String? notes;
   final String userId;
+  final DateTime? endDate;
+  final DateTime startDate;
+
   static const List<String> categories = [
     'General',
     'Fever',
@@ -19,7 +22,7 @@ class Medication {
     'Antibiotics',
     'Other'
   ];
-  
+
   Medication({
     String? id,
     required this.name,
@@ -29,11 +32,13 @@ class Medication {
     List<bool>? takenStatus,
     this.notes,
     required this.userId,
-  }) : 
-    id = id ?? const Uuid().v4(),
-    takenStatus = takenStatus ?? List.filled(reminderTimes.length, false);
-  
-  // Create copy with updated fields
+    this.endDate,
+    required this.startDate,// Add this parameter
+  }) :
+        id = id ?? const Uuid().v4(),
+        takenStatus = takenStatus ?? List.filled(reminderTimes.length, false);
+
+  // Update copyWith to include endDate
   Medication copyWith({
     String? name,
     String? category,
@@ -41,6 +46,8 @@ class Medication {
     int? frequency,
     List<bool>? takenStatus,
     String? notes,
+    DateTime? endDate,
+    DateTime? startDate,
   }) {
     return Medication(
       id: id,
@@ -51,10 +58,12 @@ class Medication {
       takenStatus: takenStatus ?? this.takenStatus,
       notes: notes ?? this.notes,
       userId: userId,
+      endDate: endDate ?? this.endDate,
+      startDate: startDate ?? this.startDate
     );
   }
-  
-  // Convert to Firestore document
+
+  // Update toMap to include endDate
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -65,18 +74,33 @@ class Medication {
       'takenStatus': takenStatus,
       'notes': notes,
       'userId': userId,
+      'endDate': endDate?.millisecondsSinceEpoch,
+      'startDate':startDate?.microsecondsSinceEpoch
+      // Store as milliseconds
     };
   }
-  
-  // Create from Firestore document
+
   static Medication fromMap(Map<String, dynamic> map) {
     List<dynamic> timesList = map['reminderTimes'];
     List<DateTime> times = timesList
         .map((time) => DateTime.fromMillisecondsSinceEpoch(time as int))
         .toList();
+
     List<dynamic> statusList = map['takenStatus'] ?? List.filled(times.length, false);
     List<bool> status = statusList.map((status) => status as bool).toList();
-    
+
+    DateTime? endDate;
+    if (map['endDate'] != null) {
+      endDate = DateTime.fromMillisecondsSinceEpoch(map['endDate']);
+    }
+
+    DateTime startDate;
+    if (map['startDate'] != null) {
+      startDate = DateTime.fromMicrosecondsSinceEpoch(map['startDate']);
+    } else {
+      throw Exception('startDate is required');
+    }
+
     return Medication(
       id: map['id'],
       name: map['name'],
@@ -86,6 +110,17 @@ class Medication {
       takenStatus: status,
       notes: map['notes'],
       userId: map['userId'],
+      endDate: endDate,
+      startDate: startDate,
     );
+  }
+
+  // Add a helper method to check if medication is active
+  bool isActive() {
+    if (endDate == null) return true;
+
+    final now = DateTime.now();
+    final todayEnd = DateTime(now.year, now.month, now.day, 23, 59, 59);
+    return endDate!.isAfter(todayEnd);
   }
 }

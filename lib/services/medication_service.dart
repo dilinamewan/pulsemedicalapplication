@@ -7,6 +7,7 @@ class MedicationService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final NotificationService _notificationService = NotificationService();
+
   
   // Get current user ID
   String get _userId => _auth.currentUser?.uid ?? '';
@@ -23,13 +24,11 @@ class MedicationService {
             .map((doc) => Medication.fromMap(doc.data() as Map<String, dynamic>))
             .toList());
   }
-  
+
   // Get medications for any user (returns Future instead of Stream)
   Future<List<Medication>> getUserMedications() async {
     try {
-      final querySnapshot = await _medicationsCollection
-          .get();
-      
+      final querySnapshot = await _medicationsCollection.get();
       return querySnapshot.docs
           .map((doc) => Medication.fromMap(doc.data() as Map<String, dynamic>))
           .toList();
@@ -37,39 +36,45 @@ class MedicationService {
       throw Exception('Failed to load medications: $e');
     }
   }
-  
-  // Add new medication
+
+// Modify the addMedication method in MedicationService
   Future<void> addMedication(Medication medication) async {
     await _medicationsCollection.doc(medication.id).set(medication.toMap());
-      
-    // Schedule notifications for each reminder time
-    for (int i = 0; i < medication.reminderTimes.length; i++) {
-      await _notificationService.scheduleMedicationNotification(
-        medication.id,
-        i,
-        medication.name,
-        medication.category,
-        medication.reminderTimes[i],
-      );
+
+    // Only schedule notifications if the medication is still active
+    if (medication.isActive()) {
+      // Schedule notifications for each reminder time
+      for (int i = 0; i < medication.reminderTimes.length; i++) {
+        await _notificationService.scheduleMedicationNotification(
+          medication.id,
+          i,
+          medication.name,
+          medication.category,
+          medication.reminderTimes[i],
+        );
+      }
     }
   }
-  
-  // Update medication
+
+// Modify the updateMedication method in MedicationService
   Future<void> updateMedication(Medication medication) async {
     await _medicationsCollection.doc(medication.id).update(medication.toMap());
-      
-    // Cancel existing notifications and reschedule
+
+    // Cancel existing notifications
     await _notificationService.cancelMedicationNotifications(medication.id);
-      
-    // Schedule new notifications
-    for (int i = 0; i < medication.reminderTimes.length; i++) {
-      await _notificationService.scheduleMedicationNotification(
-        medication.id,
-        i,
-        medication.name,
-        medication.category,
-        medication.reminderTimes[i],
-      );
+
+    // Only schedule new notifications if the medication is still active
+    if (medication.isActive()) {
+      // Schedule new notifications
+      for (int i = 0; i < medication.reminderTimes.length; i++) {
+        await _notificationService.scheduleMedicationNotification(
+          medication.id,
+          i,
+          medication.name,
+          medication.category,
+          medication.reminderTimes[i],
+        );
+      }
     }
   }
   

@@ -99,7 +99,7 @@ class _MedicationDetailsScreenState extends State<MedicationDetailsScreen> {
                 ),
               ],
             ),
-            const Divider(),
+            const SizedBox(height: 6),
             Row(
               children: [
                 const Icon(Icons.category, size: 20),
@@ -107,6 +107,19 @@ class _MedicationDetailsScreenState extends State<MedicationDetailsScreen> {
                 Text(
                   'Category: ${widget.medication.category}',
                   style: const TextStyle(fontSize: 16),
+                ),
+              ],
+            ),
+            const Divider(),
+            Row(
+              children: [
+                const Icon(Icons.date_range_sharp, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  "Start Date: ${DateFormat('yyyy-MM-dd').format(widget.medication.startDate)}",
+                  style: const TextStyle(
+                    fontSize: 16,
+                  ),
                 ),
               ],
             ),
@@ -121,6 +134,20 @@ class _MedicationDetailsScreenState extends State<MedicationDetailsScreen> {
                 ),
               ],
             ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Icon(Icons.date_range_sharp, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  "End Date: ${widget.medication.endDate == null ? "N/A" : DateFormat('yyyy-MM-dd').format(widget.medication.endDate!)}",
+                  style: const TextStyle(
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+            const Divider(),
           ],
         ),
       ),

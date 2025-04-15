@@ -17,6 +17,9 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
   final _medicationService = MedicationService();
   final _nameController = TextEditingController();
   final _notesController = TextEditingController();
+  final TextEditingController _endDateController = TextEditingController();
+  DateTime? _endDate;
+
 
   String _selectedCategory = Medication.categories.first;
   final List<DateTime> _reminderTimes = [DateTime.now()];
@@ -83,6 +86,7 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
   void dispose() {
     _nameController.dispose();
     _notesController.dispose();
+    _endDateController.dispose();
     super.dispose();
   }
 
@@ -118,6 +122,30 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
                 _buildCategoryDropdown(),
                 const SizedBox(height: 16),
                 _buildReminderTimesSection(),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _endDateController,
+                  readOnly: true,
+                  decoration: const InputDecoration(
+                    labelText: 'End Date (Optional)',
+                    border: OutlineInputBorder(),
+                    suffixIcon: Icon(Icons.calendar_today),
+                  ),
+                  onTap: () async {
+                    final pickedDate = await showDatePicker(
+                      context: context,
+                      initialDate: widget.scheduleDate,
+                      firstDate: widget.scheduleDate,
+                      lastDate: DateTime(2100),
+                    );
+                    if (pickedDate != null) {
+                      setState(() {
+                        _endDate = pickedDate;
+                        _endDateController.text = "${pickedDate.toLocal()}".split(' ')[0];
+                      });
+                    }
+                  },
+                ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _notesController,
@@ -241,6 +269,8 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
       frequency: _reminderTimes.length,
       notes: _notesController.text.isNotEmpty ? _notesController.text : null,
       userId: userId,
+      startDate: widget.scheduleDate,
+      endDate: _endDate,
     );
 
     try {
