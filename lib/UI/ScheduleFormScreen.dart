@@ -545,21 +545,25 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
                 context: context,
                 builder: (BuildContext context) {
                   return AlertDialog(
-                    title: const Text('Pick a color'),
+                    backgroundColor: Colors.grey[800],
+                    title: const Text('Pick a color',style: TextStyle(
+                      color: Colors.white
+                    ),),
                     content: SingleChildScrollView(
-                      child: ColorPicker(
+                      child: BlockPicker(
                         pickerColor: Tcolor ?? Colors.red,
                         onColorChanged: (Color color) {
                           setState(() {
                             Tcolor = color;
                           });
                         },
-                        pickerAreaHeightPercent: 0.8,
                       ),
                     ),
-                    actions: <Widget>[
+                  actions: <Widget>[
                       TextButton(
-                        child: const Text('OK'),
+                        child: const Text('OK',style: TextStyle(
+                          color: Colors.white
+                        ),),
                         onPressed: () {
                           Navigator.of(context).pop();
                         },
