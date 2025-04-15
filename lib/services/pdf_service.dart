@@ -143,11 +143,26 @@ class DocumentParser {
     return utf8.decode(decompressed);
   }
 
+  Future<void> deletepdf(String customid) async {
+    try {
+      final userDocRef = _firestore.collection('users').doc(_userId);
+      final docsSnapshot = await userDocRef.collection('documents').get();
+      for (var doc in docsSnapshot.docs) {
+        if (doc.id.endsWith('_$customid')) {
+          await doc.reference.delete();
+          debugPrint('Deleted document: ${doc.id}');
+        }
+      }
+    } catch (e) {
+      debugPrint('Error deleting schedule and related documents: $e');
+    }
+  }
+
   /// Parses a document file in the background and stores the result in Firestore
   /// Returns the document ID and markdown content on success
-  Future<Map<String, dynamic>> parseDocument(dynamic result) async {
+  Future<Map<String, dynamic>> parseDocument(String result,String customid) async {
     try {
-      final filePath = result.files.single.path!;
+      final filePath = result;
       final fileName = filePath.split('/').last;
 
       // Prepare the job for background processing
@@ -170,7 +185,7 @@ class DocumentParser {
         String docName = fileName.split('.').first;
 
         // This code will change in future
-        String docId = '${docName}_${DateTime.now().millisecondsSinceEpoch}';
+        String docId = '${docName}_${customid}';
 
         // Store in Firestore
         await _firestore.collection('users')
@@ -229,34 +244,88 @@ class DocumentParser {
           .collection('users')
           .doc(_userId)
           .collection('documents')
-          .orderBy('createdAt', descending: true)
           .get();
 
-      return querySnapshot.docs.map((doc) {
-        var data = doc.data();
-        // Remove the compressed content from the list view for efficiency
-        data.remove('compressedContent');
-        data['id'] = doc.id;
-        return data;
-      }).toList();
+      List<Map<String, dynamic>> results = [];
+
+      for (var doc in querySnapshot.docs) {
+        try {
+          final data = doc.data();
+          if (data.containsKey('compressedContent') && data['compressedContent'] != null) {
+            // Convert to Uint8List regardless of input type
+            Uint8List compressedContent;
+
+            if (data['compressedContent'] is Uint8List) {
+              compressedContent = data['compressedContent'];
+            } else if (data['compressedContent'] is List) {
+              // Convert List<dynamic> to Uint8List
+              final listData = data['compressedContent'] as List;
+              if (listData.isEmpty) {
+                // Handle empty list case
+                results.add({
+                  'id': doc.id,
+                  'markdown': 'Error: Document content is empty',
+                  'fileName': doc.id.split('_').first,
+                });
+                continue;
+              }
+              compressedContent = Uint8List.fromList(
+                  listData.map((item) => item as int).toList()
+              );
+            } else {
+              // Skip this document if content is in an unexpected format
+              results.add({
+                'id': doc.id,
+                'markdown': 'Error: Document content is in an invalid format',
+                'fileName': doc.id.split('_').first,
+              });
+              continue;
+            }
+
+            // Safely decompress the markdown
+            String markdown;
+            try {
+              markdown = decompressString(compressedContent);
+            } catch (e) {
+              print('Error decompressing document ${doc.id}: ${e.toString()}');
+              results.add({
+                'id': doc.id,
+                'markdown': 'Error: Document content could not be decompressed',
+                'fileName': doc.id.split('_').first,
+              });
+              continue;
+            }
+
+            results.add({
+              'id': doc.id,
+              'markdown': markdown,
+              'fileName': doc.id.split('_').first,
+            });
+          } else {
+            results.add({
+              'id': doc.id,
+              'markdown': 'Error: No content available',
+              'fileName': doc.id.split('_').first,
+            });
+          }
+        } catch (e) {
+          print('Error processing document ${doc.id}: ${e.toString()}');
+          // Add the document with error indication
+          results.add({
+            'id': doc.id,
+            'markdown': 'Error: Failed to process document',
+            'fileName': doc.id.split('_').first,
+          });
+        }
+      }
+
+      return results;
     } catch (e) {
+      print('Error retrieving documents: ${e.toString()}');
       throw Exception('Error retrieving documents: ${e.toString()}');
     }
   }
 
-  /// Deletes a document from Firestore
-  Future<void> deleteDocument(String documentId) async {
-    try {
-      await _firestore
-          .collection('users')
-          .doc(_userId)
-          .collection('documents')
-          .doc(documentId)
-          .delete();
-    } catch (e) {
-      throw Exception('Error deleting document: ${e.toString()}');
-    }
-  }
 
   /// Clears all documents for the current user
   Future<void> clearData() async {
