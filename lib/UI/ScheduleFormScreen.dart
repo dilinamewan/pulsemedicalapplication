@@ -7,9 +7,9 @@ import 'package:pulse/models/Schedules.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:pulse/models/Hospitals.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
 import 'components/CalendarScreen.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'package:pulse/services/pdf_service.dart';
 
 class ScheduleFormScreen extends StatefulWidget {
   final DateTime scheduleDate;
@@ -163,15 +163,40 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter a title')),
       );
+      return; // Prevent further execution
     }
-    if (title.isNotEmpty) {
-      String formattedDate = "${widget.scheduleDate.year}-${widget.scheduleDate
-          .month.toString().padLeft(2, '0')}-${widget.scheduleDate.day
-          .toString().padLeft(2, '0')}";
+
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.grey[900],
+          content: Row(
+            children: const [
+              CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+              SizedBox(width: 16),
+              Text(
+                "Saving...",
+                style: TextStyle(color: Colors.white),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+
+    try {
+      String formattedDate =
+          "${widget.scheduleDate.year}-${widget.scheduleDate.month.toString().padLeft(2, '0')}-${widget.scheduleDate.day.toString().padLeft(2, '0')}";
 
       ScheduleService scheduleService = ScheduleService();
 
-      await scheduleService.addSchedule(
+      String? customid = await scheduleService.addSchedule(
         title,
         formattedDate,
         "${startTime.hour}:${startTime.minute}",
@@ -184,64 +209,96 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
         notes ?? {},
         docs,
       );
-      uploadFile();
 
-      Navigator.pop(context, true);
+      List<String> secondPaths = extractSecondPaths(docs);
+      for (var path in secondPaths) {
+        final parser = DocumentParser();
+        await parser.parseDocument(path, customid!);
+      }
+
+      await uploadFile();
+
+      Navigator.pop(context); // Close loading dialog
+      Navigator.pop(context, true); // Go back
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Schedule added successfully')),
       );
+    } catch (e) {
+      Navigator.pop(context); // Close loading dialog in case of error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to add schedule: $e')),
+      );
     }
-
   }
 
   Future<void> updateSchedule() async {
-    // Get the title from the text field
     String title = titleController.text.trim();
 
-    // Validate the title
     if (title.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter a title')),
       );
-
       return;
     }
 
-    // Format the date to match the format used in the database
+    // Store the context before showing dialog for later reference
+    final BuildContext dialogContext = context;
+
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.grey[900],
+          content: Row(
+            children: const [
+              CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+              SizedBox(width: 16),
+              Text(
+                "Saving...",
+                style: TextStyle(color: Colors.white),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
     String formattedDate =
         "${widget.scheduleDate.year}-${widget.scheduleDate.month.toString().padLeft(2, '0')}-${widget.scheduleDate.day.toString().padLeft(2, '0')}";
 
-
-    // Create an instance of ScheduleService
     ScheduleService scheduleService = ScheduleService();
 
-
-    for (var i = 0; i < docs.length; i++) {
-      for (var j = 0; j < docFile.length; j++) {
-        if (docs[i] != docFile[j]) {
-          String fileToRemove = docFile[j].split(',')[0];
-          await supabase.storage.from('pulseapp').remove([fileToRemove]);
+    try {
+      // Delete files that were removed
+      for (var i = 0; i < docs.length; i++) {
+        for (var j = 0; j < docFile.length; j++) {
+          if (docs[i] != docFile[j]) {
+            String fileToRemove = docFile[j].split(',')[0];
+            await supabase.storage.from('pulseapp').remove([fileToRemove]);
+          }
         }
       }
-    }
 
-    if (docs.isEmpty) {
-      await supabase.storage.from('pulseapp').remove([widget.scheduleId!]);
-      final response = await supabase.storage
-          .from('pulseapp')
-          .list(path: widget.scheduleId!);
+      // Handle case when all docs are removed
+      if (docs.isEmpty) {
+        await supabase.storage.from('pulseapp').remove([widget.scheduleId!]);
+        final response =
+        await supabase.storage.from('pulseapp').list(path: widget.scheduleId!);
 
-      if (response.isNotEmpty) {
-        String fileName = response.first.name;
-
-        await supabase.storage
-            .from('pulseapp')
-            .remove(['${widget.scheduleId!}/$fileName']);
+        if (response.isNotEmpty) {
+          String fileName = response.first.name;
+          await supabase.storage
+              .from('pulseapp')
+              .remove(['${widget.scheduleId!}/$fileName']);
+        }
       }
-    }
 
-    try {
+      // Update schedule in database
       await scheduleService.updateSchedule(
         widget.scheduleId!,
         title,
@@ -257,25 +314,69 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
         docs,
       );
 
+      // Process documents
+      final parser = DocumentParser();
+      parser.deletepdf(widget.scheduleId!);
+      List<String> secondPaths = extractSecondPaths(docs);
+      for (var path in secondPaths) {
+        await parser.parseDocument(path, widget.scheduleId!);
+      }
 
-      uploadFile(); // Consider awaiting if it's async
+      // Upload any new files
+      await uploadFile();
 
-      Navigator.pop(context, true);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Schedule updated successfully')),
-      );
+      // First close the dialog if still mounted
+      if (mounted) {
+        Navigator.of(dialogContext).pop();
+      }
+
+      // Wait for UI to stabilize
+      await Future.delayed(Duration(milliseconds: 300));
+
+      // Show success message if still mounted
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Schedule updated successfully')),
+        );
+      }
+
+      // Wait again before final navigation
+      await Future.delayed(Duration(milliseconds: 100));
+
+      // Now navigate back if still mounted
+      if (mounted) {
+        Navigator.of(context).pop(true);
+      }
+
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to update schedule: $e')),
-      );
+      // Close dialog if still mounted
+      if (mounted) {
+        Navigator.of(dialogContext).pop();
+      }
+
+      // Wait for UI to stabilize
+      await Future.delayed(Duration(milliseconds: 100));
+
+      // Show error if still mounted
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update schedule: $e')),
+        );
+      }
     }
+  }
+
+  List<String> extractSecondPaths(List<String> inputs) {
+    return inputs.map((input) {
+      List<String> parts = input.split(',');
+      return parts.length >= 2 ? parts[1] : '';
+    }).toList();
   }
 
 
   Future<void> uploadFile() async {
     for (var i = 0; i < docs.length; i++) {
-      String filePath = '${widget.scheduleId}/${docs[i].split(',')[0].split('/')[1]}';
-
+      String filePath = docs[i].split(',')[1];
       File fileToUpload = File(filePath);
       print(filePath);
 

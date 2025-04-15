@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
 
 class Schedule {
   Schedule({
@@ -77,12 +78,31 @@ class ScheduleService {
   }
 
   /// Add a new schedule
-  Future<void> addSchedule(
-      String title, String date, String startTime, String endTime, GeoPoint location, String alert, String color, Map notes, List docs) async {
+  Future<String?> addSchedule(
+      String title,
+      String date,
+      String startTime,
+      String endTime,
+      GeoPoint location,
+      String alert,
+      String color,
+      Map notes,
+      List docs,
+      ) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? UserId = prefs.getString('user_id');
+    String? userId = prefs.getString('user_id');
+
+    // Generate your own UUID
+    String customId = const Uuid().v4();
+
     try {
-      await _firestore.collection('users').doc(UserId).collection('schedules').add({
+      await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('schedules')
+          .doc(customId) // Use your own ID here
+          .set({
+        'id': customId, // Store the ID if you want to refer to it later
         'title': title,
         'date': date,
         'start_time': startTime,
@@ -93,8 +113,8 @@ class ScheduleService {
         'note': notes,
         'docs': docs,
       });
-
-      debugPrint('Schedule added successfully');
+      return customId;
+      debugPrint('Schedule added successfully with custom ID: $customId');
     } catch (e) {
       debugPrint('Error adding schedule: $e');
     }
@@ -118,24 +138,85 @@ class ScheduleService {
         'docs': docs,
         'updatedAt': FieldValue.serverTimestamp(),
       });
-
       debugPrint('Schedule updated successfully');
     } catch (e) {
       debugPrint('Error updating schedule: $e');
     }
   }
 
-  /// Delete a schedule
   Future<void> deleteSchedule(String scheduleId) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? UserId = prefs.getString('user_id');
-    try {
-      await _firestore.collection('users').doc(UserId).collection('schedules').doc(scheduleId).delete();
+    String? userId = prefs.getString('user_id');
 
-      debugPrint('Schedule deleted successfully');
-    } catch (e) {
-      debugPrint('Error deleting schedule: $e');
+    if (userId == null) {
+      debugPrint('User ID not found in SharedPreferences');
+      return;
     }
+
+    try {
+      final userDocRef = _firestore.collection('users').doc(userId);
+      await userDocRef.collection('schedules').doc(scheduleId).delete();
+      debugPrint('Schedule deleted successfully');
+      final docsSnapshot = await userDocRef.collection('documents').get();
+      for (var doc in docsSnapshot.docs) {
+        if (doc.id.endsWith('_$scheduleId')) {
+          await doc.reference.delete();
+          debugPrint('Deleted document: ${doc.id}');
+        }
+      }
+    } catch (e) {
+      debugPrint('Error deleting schedule and related documents: $e');
+    }
+  }
+
+
+  /// Fetch all schedules for the current user
+  Future<List<Schedule>> getAllSchedules() async {
+    List<Schedule> schedules = [];
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? userId = prefs.getString('user_id');
+
+    if (userId == null) {
+      debugPrint('User ID is null. Make sure it is saved in SharedPreferences.');
+      return schedules;
+    }
+
+    try {
+      QuerySnapshot querySnapshot = await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('schedules')
+          .get();
+
+      for (var doc in querySnapshot.docs) {
+        final data = doc.data() as Map<String, dynamic>?;
+
+        if (data != null) {
+          schedules.add(
+            Schedule(
+              scheduleId: doc.id,
+              title: data['title'] ?? 'No Title',
+              date: data['date'] ?? 'Unknown Date',
+              startTime: data['start_time'] ?? '00:00',
+              endTime: data['end_time'] ?? '00:00',
+              location: data['location'] is GeoPoint
+                  ? data['location'] as GeoPoint
+                  : const GeoPoint(0.0, 0.0),
+              alert: data['alert_frequency'] ?? 'No Alert',
+              color: data['color'] ?? '#FF000000',
+              notes: data['note'] ?? {},
+              documents: data['docs'] != null
+                  ? List<String>.from(data['docs'])
+                  : [],
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching all schedules: $e');
+    }
+
+    return schedules;
   }
 
 }
