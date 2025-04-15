@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:pulse/models/Schedules.dart';
 import 'package:intl/intl.dart';
 
+
 class NotificationService {
   // Singleton implementation
   static final NotificationService _instance = NotificationService._internal();
@@ -117,19 +118,18 @@ class NotificationService {
 
   // SCHEDULE NOTIFICATIONS
 
-  // Setup periodic checks for schedules
+// Setup periodic checks for schedules
   Future<void> _setupPeriodicScheduleChecks() async {
     // Schedule initial checks
     await checkSchedulesForToday();
     await checkSchedulesForTomorrow();
 
-    // We'll use the awesome_notifications scheduling instead of workmanager
-    // Schedule daily check for tomorrow's schedules - runs at 8 PM every day
+    // Daily check for tomorrow's schedules - runs at 8 PM every day
     final now = DateTime.now();
-    final checkTime = DateTime(now.year, now.month, now.day, 20, 0);
-    final checkTimeToUse = now.isAfter(checkTime)
-        ? checkTime.add(Duration(days: 1))
-        : checkTime;
+    final checkTomorrowTime = DateTime(now.year, now.month, now.day, 20, 0);
+    final tomorrowTriggerTime = now.isAfter(checkTomorrowTime)
+        ? checkTomorrowTime.add(Duration(days: 1))
+        : checkTomorrowTime;
 
     await AwesomeNotifications().createNotification(
       content: NotificationContent(
@@ -141,8 +141,8 @@ class NotificationService {
         displayOnBackground: false,
       ),
       schedule: NotificationCalendar(
-        hour: checkTimeToUse.hour,
-        minute: checkTimeToUse.minute,
+        hour: tomorrowTriggerTime.hour,
+        minute: tomorrowTriggerTime.minute,
         second: 0,
         millisecond: 0,
         repeats: true,
@@ -157,18 +157,24 @@ class NotificationService {
       ],
     );
 
-    // Setup hourly checks for today's schedule alerts
+    // NEW: Check today's schedules at 6:00 AM
+    final today6am = DateTime(now.year, now.month, now.day, 6, 0);
+    final sixAMTriggerTime = now.isAfter(today6am)
+        ? today6am.add(Duration(days: 1))
+        : today6am;
+
     await AwesomeNotifications().createNotification(
       content: NotificationContent(
-        id: 100002,
+        id: 100003,
         channelKey: _scheduleChannelKey,
         title: 'Check Today Schedules',
-        body: 'This is a system notification to trigger schedule checks',
+        body: 'This is a system notification to trigger schedule checks at 6AM',
         displayOnForeground: false,
         displayOnBackground: false,
       ),
       schedule: NotificationCalendar(
-        minute: 0,  // Run at the top of every hour
+        hour: sixAMTriggerTime.hour,
+        minute: sixAMTriggerTime.minute,
         second: 0,
         millisecond: 0,
         repeats: true,
@@ -183,6 +189,7 @@ class NotificationService {
       ],
     );
   }
+
 
   // Check schedules for tomorrow
   Future<void> checkSchedulesForTomorrow() async {
