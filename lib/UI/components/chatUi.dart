@@ -9,6 +9,8 @@ import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../../models/Medication.dart';
+
 
 
 class ChatPage extends StatefulWidget {
@@ -26,6 +28,7 @@ class _ChatPageState extends State<ChatPage> {
   String? scheduleData;
   String currentDateTime = '';
   String? healthMetricsData;
+  String? medicationsData;
 
   @override
   void initState() {
@@ -39,6 +42,7 @@ class _ChatPageState extends State<ChatPage> {
       await _loadFileContent();
       await _loadScheduleData();
       await _loadHealthMetrics();
+      await _loadMedications();
       _initializeProvider();
       setState(() {
         _isInitialized = true;
@@ -47,6 +51,32 @@ class _ChatPageState extends State<ChatPage> {
       setState(() {
         _error = 'Failed to initialize: $e';
       });
+    }
+  }
+
+  Future<void> _loadMedications() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
+
+      final snapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('medications')
+          .get();
+
+      final meds = snapshot.docs.map((doc) {
+        final med = Medication.fromMap(doc.data());
+
+        final medMap = med.toMap();
+        medMap.remove('id');
+
+        return medMap;
+      }).toList();
+
+      medicationsData = jsonEncode(meds);
+    } catch (e) {
+      print("💊 Failed to load medications: $e");
     }
   }
 
@@ -139,7 +169,9 @@ class _ChatPageState extends State<ChatPage> {
       
        Health Metrics Data:
       $healthMetricsData
-
+      
+      Medication Reminder Data:
+      $medicationsData
 
       Your task is to:
       1. Carefully analyze the provided markdown file content above
