@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -156,6 +157,7 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
     }
   }
 
+// First, modify your addSchedule function:
   Future<void> addSchedule() async {
     String title = titleController.text.trim();
 
@@ -189,14 +191,14 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
       },
     );
 
-
     try {
       String formattedDate =
           "${widget.scheduleDate.year}-${widget.scheduleDate.month.toString().padLeft(2, '0')}-${widget.scheduleDate.day.toString().padLeft(2, '0')}";
 
       ScheduleService scheduleService = ScheduleService();
 
-      String? customid = await scheduleService.addSchedule(
+      // 1. First save the basic schedule data
+      String? customId = await scheduleService.addSchedule(
         title,
         formattedDate,
         "${startTime.hour}:${startTime.minute}",
@@ -210,30 +212,48 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
         docs,
       );
 
+      // 2. Start file upload in parallel
+      final uploadFuture = uploadFile();
+
+      // 3. Start PDF parsing in the background and don't wait for it
       List<String> secondPaths = extractSecondPaths(docs);
       for (var path in secondPaths) {
         if (path.toLowerCase().endsWith('.pdf')) {
+          // Launch PDF parsing in background without awaiting
           final parser = DocumentParser();
-          await parser.parseDocument(path, customid!);
+          // Just fire and forget - the parsing will happen in background
+          parser.parseDocument(path, customId!).then((result) {
+            // Optional: Log the result for debugging
+            if (kDebugMode) {
+              print('PDF parsed in background: ${result['success']}');
+            }
+          });
         }
       }
 
-      await uploadFile();
+      // 4. Wait for upload to complete
+      await uploadFuture;
 
-      Navigator.pop(context); // Close loading dialog
-      Navigator.pop(context, true); // Go back
+      // 5. Close dialogs and navigate back
+      if (mounted) {
+        Navigator.pop(context); // Close loading dialog
+        Navigator.pop(context, true); // Go back
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Schedule added successfully')),
-      );
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Schedule added successfully')),
+        );
+      }
     } catch (e) {
-      Navigator.pop(context); // Close loading dialog in case of error
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to add schedule: $e')),
-      );
+      if (mounted) {
+        Navigator.pop(context); // Close loading dialog in case of error
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to add schedule: $e')),
+        );
+      }
     }
   }
 
+// Similarly update the updateSchedule function:
   Future<void> updateSchedule() async {
     String title = titleController.text.trim();
 
@@ -276,32 +296,11 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
     ScheduleService scheduleService = ScheduleService();
 
     try {
-      // Delete files that were removed
-      for (var i = 0; i < docs.length; i++) {
-        for (var j = 0; j < docFile.length; j++) {
-          if (docs[i] != docFile[j]) {
-            String fileToRemove = docFile[j].split(',')[0];
-            await supabase.storage.from('pulseapp').remove([fileToRemove]);
-          }
-        }
-      }
+      // 1. Delete files that were removed - do this first
+      final deleteFilesFuture = _deleteRemovedFiles();
 
-      // Handle case when all docs are removed
-      if (docs.isEmpty) {
-        await supabase.storage.from('pulseapp').remove([widget.scheduleId!]);
-        final response =
-        await supabase.storage.from('pulseapp').list(path: widget.scheduleId!);
-
-        if (response.isNotEmpty) {
-          String fileName = response.first.name;
-          await supabase.storage
-              .from('pulseapp')
-              .remove(['${widget.scheduleId!}/$fileName']);
-        }
-      }
-
-      // Update schedule in database
-      await scheduleService.updateSchedule(
+      // 2. Update schedule in database
+      final updateScheduleFuture = scheduleService.updateSchedule(
         widget.scheduleId!,
         title,
         formattedDate,
@@ -316,56 +315,81 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
         docs,
       );
 
-      // Process documents
+      // 3. Start file upload in parallel
+      final uploadFuture = uploadFile();
+
+      // 4. Clear existing PDF data - must be awaited
       final parser = DocumentParser();
-      parser.deletepdf(widget.scheduleId!);
+      await parser.deletepdf(widget.scheduleId!);
+
+      // 5. Process documents in background
       List<String> secondPaths = extractSecondPaths(docs);
       for (var path in secondPaths) {
         if (path.toLowerCase().endsWith('.pdf')) {
-          await parser.parseDocument(path, widget.scheduleId!);
+          // Launch PDF parsing in background without awaiting the result
+          parser.parseDocument(path, widget.scheduleId!).then((result) {
+            // Optional: Log the result for debugging
+            if (kDebugMode) {
+              print('PDF parsed in background: ${result['success']}');
+            }
+          });
         }
       }
 
-      // Upload any new files
-      await uploadFile();
+      // 6. Wait for the pending operations (except PDF parsing)
+      await Future.wait([
+        deleteFilesFuture,
+        updateScheduleFuture,
+        uploadFuture,
+      ]);
 
-      // First close the dialog if still mounted
+      // 7. Close dialog and navigate
       if (mounted) {
         Navigator.of(dialogContext).pop();
-      }
 
-      // Wait for UI to stabilize
-      await Future.delayed(Duration(milliseconds: 300));
-
-      // Show success message if still mounted
-      if (mounted) {
+        // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Schedule updated successfully')),
         );
-      }
 
-      // Wait again before final navigation
-      await Future.delayed(Duration(milliseconds: 100));
-
-      // Now navigate back if still mounted
-      if (mounted) {
+        // Navigate back
         Navigator.of(context).pop(true);
       }
-
     } catch (e) {
       // Close dialog if still mounted
       if (mounted) {
         Navigator.of(dialogContext).pop();
-      }
 
-      // Wait for UI to stabilize
-      await Future.delayed(Duration(milliseconds: 100));
-
-      // Show error if still mounted
-      if (mounted) {
+        // Show error
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to update schedule: $e')),
         );
+      }
+    }
+  }
+
+// Helper method to delete removed files
+  Future<void> _deleteRemovedFiles() async {
+    for (var i = 0; i < docs.length; i++) {
+      for (var j = 0; j < docFile.length; j++) {
+        if (docs[i] != docFile[j]) {
+          String fileToRemove = docFile[j].split(',')[0];
+          await supabase.storage.from('pulseapp').remove([fileToRemove]);
+        }
+      }
+    }
+
+    // Handle case when all docs are removed
+    if (docs.isEmpty) {
+      await supabase.storage.from('pulseapp').remove([widget.scheduleId!]);
+      final response =
+      await supabase.storage.from('pulseapp').list(path: widget.scheduleId!);
+
+      if (response.isNotEmpty) {
+        String fileName = response.first.name;
+        await supabase.storage
+            .from('pulseapp')
+            .remove(['${widget.scheduleId!}/$fileName']);
       }
     }
   }
