@@ -23,6 +23,7 @@ class CalendarScreenState extends State<CalendarScreen> with SingleTickerProvide
 
   // Key to force ScheduleCalenderScreen rebuild
   final GlobalKey<ScheduleCalenderScreenState> _scheduleScreenKey = GlobalKey();
+  final GlobalKey<MedicationHomeScreenState> _medicationScreenKey = GlobalKey();
 
   @override
   void initState() {
@@ -296,7 +297,10 @@ class CalendarScreenState extends State<CalendarScreen> with SingleTickerProvide
                 date: DateFormat('yyyy-MM-dd').format(_selectedDay),
                 onScheduleUpdated: refreshCalendarData,
               ),
-              MedicationHomeScreen(),
+              MedicationHomeScreen(
+                key: _medicationScreenKey,
+                date:_selectedDay,
+              ),
             ],
           ),
         ),

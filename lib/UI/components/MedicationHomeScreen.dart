@@ -6,18 +6,19 @@ import 'package:pulse/services/medication_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class MedicationHomeScreen extends StatefulWidget {
-  const MedicationHomeScreen({super.key});
+  final DateTime date;
+  const MedicationHomeScreen({super.key, required this.date});
 
   void refreshMedications(BuildContext context) {
-    final state = context.findAncestorStateOfType<_MedicationHomeScreenState>();
+    final state = context.findAncestorStateOfType<MedicationHomeScreenState>();
     state?.loadMedications();
   }
 
   @override
-  _MedicationHomeScreenState createState() => _MedicationHomeScreenState();
+  MedicationHomeScreenState createState() => MedicationHomeScreenState();
 }
 
-class _MedicationHomeScreenState extends State<MedicationHomeScreen> {
+class MedicationHomeScreenState extends State<MedicationHomeScreen> {
   final MedicationService _medicationService = MedicationService();
   List<Medication> medications = [];
   bool _isLoading = true;
@@ -28,6 +29,20 @@ class _MedicationHomeScreenState extends State<MedicationHomeScreen> {
     super.initState();
     loadMedications();
   }
+
+  @override
+  void didUpdateWidget(MedicationHomeScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!isSameDay(oldWidget.date, widget.date)) {
+      loadMedications();
+    }
+  }
+
+
+  bool isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
 
   void loadMedications() async {
     setState(() {
@@ -45,11 +60,21 @@ class _MedicationHomeScreenState extends State<MedicationHomeScreen> {
         return;
       }
 
-      final medicationsList =
-          await _medicationService.getUserMedications();
+      // Get all medications first
+      final allMedicationsList = await _medicationService.getUserMedications();
+
+      final filteredMedications = allMedicationsList.where((med) {
+        final target = widget.date;
+
+        final startsBeforeOrOn = med.startDate.isBefore(target) || isSameDay(med.startDate, target);
+        final endsAfterOrOn = med.endDate == null || med.endDate!.isAfter(target) || isSameDay(med.endDate!, target);
+
+        return startsBeforeOrOn && endsAfterOrOn;
+      }).toList();
+
 
       setState(() {
-        medications = medicationsList;
+        medications = filteredMedications;
         _isLoading = false;
       });
     } catch (e) {
