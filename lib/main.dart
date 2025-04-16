@@ -11,10 +11,10 @@ Future<void> main() async {
   try {
     // Firebase configuration
     await Firebase.initializeApp();
-
     // Initialize notifications
     final notificationService = NotificationService();
     await notificationService.initNotifications();
+    notificationService.setupNotificationActionListeners();
     // Load .env configuration
     await dotenv.load(fileName: ".env");
     await Supabase.initialize(

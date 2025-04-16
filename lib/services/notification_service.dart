@@ -74,22 +74,23 @@ class NotificationService {
       String medicationName,
       String category,
       DateTime scheduledTime,
+      DateTime? endDate,
       ) async {
-    // Generate notification ID
     final int notificationId = medicationId.hashCode + reminderIndex;
 
-    print("Scheduling medication notification ID: $notificationId for $medicationName at ${scheduledTime.toString()}");
+    String? endDateString = endDate?.toIso8601String();
 
     try {
-      bool success = await AwesomeNotifications().createNotification(
+      await AwesomeNotifications().createNotification(
         content: NotificationContent(
           id: notificationId,
           channelKey: _medicationChannelKey,
           title: 'Time to take $medicationName',
           body: 'Category: $category',
-          notificationLayout: NotificationLayout.Default,
-          category: NotificationCategory.Reminder,
-          payload: {'medicationId': medicationId},
+          payload: {
+            'medicationId': medicationId,
+            'endDate': endDateString ?? '',
+          },
         ),
         schedule: NotificationCalendar(
           hour: scheduledTime.hour,
@@ -101,9 +102,9 @@ class NotificationService {
           preciseAlarm: true,
         ),
       );
-      print("Medication notification scheduled successfully: $success");
     } catch (e) {
-      print("Error scheduling medication notification: $e");
+      print("Error scheduling notification: $e");
+      rethrow;
     }
   }
 
@@ -327,26 +328,32 @@ class NotificationService {
   }
 
   // Setup notification action listeners
-  // Setup notification action listeners
-  void setupNotificationActionListeners(Function(String) onNotificationPressed) {
+  void setupNotificationActionListeners() {
     // The correct way to listen for notification actions
     AwesomeNotifications().setListeners(
       onActionReceivedMethod: (ReceivedAction receivedAction) async {
         // Handle notification actions
         if (receivedAction.channelKey == _medicationChannelKey) {
           final medicationId = receivedAction.payload?['medicationId'];
-          if (medicationId != null) {
-            onNotificationPressed(medicationId);
+          final endDateString = receivedAction.payload?['endDate'];
+
+          if (medicationId != null && endDateString?.isNotEmpty == true) {
+            final endDate = DateTime.parse(endDateString!);
+            final today = DateTime.now();
+
+            // Compare dates without time components
+            final normalizedEndDate = DateTime(endDate.year, endDate.month, endDate.day);
+            final normalizedToday = DateTime(today.year, today.month, today.day);
+
+            if (normalizedEndDate.isBefore(normalizedToday)) {
+              // Cancel all notifications for this medication
+              await cancelMedicationNotifications(medicationId);
+              return;
+            }
           }
         } else if (receivedAction.channelKey == _scheduleChannelKey) {
-          final scheduleId = receivedAction.payload?['scheduleId'];
-          if (scheduleId != null) {
-            onNotificationPressed(scheduleId);
-          }
-        } else if (receivedAction.buttonKeyPressed == 'CHECK_TOMORROW_SCHEDULES') {
-          await checkSchedulesForTomorrow();
-        } else if (receivedAction.buttonKeyPressed == 'CHECK_TODAY_SCHEDULES') {
-          await checkSchedulesForToday();
+
+
         }
       },
     );

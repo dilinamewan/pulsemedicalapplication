@@ -51,6 +51,7 @@ class MedicationService {
           medication.name,
           medication.category,
           medication.reminderTimes[i],
+          medication.endDate,
         );
       }
     }
@@ -73,6 +74,7 @@ class MedicationService {
           medication.name,
           medication.category,
           medication.reminderTimes[i],
+          medication.endDate,
         );
       }
     }
