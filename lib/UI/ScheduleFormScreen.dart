@@ -253,7 +253,6 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
     }
   }
 
-// Similarly update the updateSchedule function:
   Future<void> updateSchedule() async {
     String title = titleController.text.trim();
 
@@ -263,32 +262,6 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
       );
       return;
     }
-
-    // Store the context before showing dialog for later reference
-    final BuildContext dialogContext = context;
-
-    // Show loading dialog
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) {
-        return AlertDialog(
-          backgroundColor: Colors.grey[900],
-          content: Row(
-            children: const [
-              CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-              ),
-              SizedBox(width: 16),
-              Text(
-                "Saving...",
-                style: TextStyle(color: Colors.white),
-              ),
-            ],
-          ),
-        );
-      },
-    );
 
     String formattedDate =
         "${widget.scheduleDate.year}-${widget.scheduleDate.month.toString().padLeft(2, '0')}-${widget.scheduleDate.day.toString().padLeft(2, '0')}";
@@ -318,7 +291,7 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
       // 3. Start file upload in parallel
       final uploadFuture = uploadFile();
 
-      // 4. Clear existing PDF data - must be awaited
+      // 4. Clear existing PDF data
       final parser = DocumentParser();
       await parser.deletepdf(widget.scheduleId!);
 
@@ -326,9 +299,7 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
       List<String> secondPaths = extractSecondPaths(docs);
       for (var path in secondPaths) {
         if (path.toLowerCase().endsWith('.pdf')) {
-          // Launch PDF parsing in background without awaiting the result
           parser.parseDocument(path, widget.scheduleId!).then((result) {
-            // Optional: Log the result for debugging
             if (kDebugMode) {
               print('PDF parsed in background: ${result['success']}');
             }
@@ -336,37 +307,29 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
         }
       }
 
-      // 6. Wait for the pending operations (except PDF parsing)
+      // 6. Wait for pending operations (except PDF parsing)
       await Future.wait([
         deleteFilesFuture,
         updateScheduleFuture,
         uploadFuture,
       ]);
 
-      // 7. Close dialog and navigate
+      // 7. Show success and navigate
       if (mounted) {
-        Navigator.of(dialogContext).pop();
-
-        // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Schedule updated successfully')),
         );
-
-        // Navigate back
         Navigator.of(context).pop(true);
       }
     } catch (e) {
-      // Close dialog if still mounted
       if (mounted) {
-        Navigator.of(dialogContext).pop();
-
-        // Show error
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to update schedule: $e')),
         );
       }
     }
   }
+
 
 // Helper method to delete removed files
   Future<void> _deleteRemovedFiles() async {
