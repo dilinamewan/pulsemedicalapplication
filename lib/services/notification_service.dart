@@ -24,7 +24,7 @@ class NotificationService {
   // Initialize notifications
   Future<void> initNotifications() async {
     await AwesomeNotifications().initialize(
-      null,
+      "resource://drawable/icon",
       [
         // Medication channel
         NotificationChannel(
@@ -37,6 +37,7 @@ class NotificationService {
           enableVibration: true,
           enableLights: true,
           ledColor: Colors.blue,
+          playSound: true,
         ),
         // Schedule channel
         NotificationChannel(
@@ -48,6 +49,7 @@ class NotificationService {
           enableVibration: true,
           enableLights: true,
           ledColor: Colors.white,
+          playSound: true,
         ),
       ],
       debug: true,
