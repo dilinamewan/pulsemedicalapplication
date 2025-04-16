@@ -79,6 +79,7 @@ class ScheduleCalenderScreenState extends State<ScheduleCalenderScreen> {
             borderRadius: BorderRadius.circular(12),
           ),
           child: InkWell(
+            // Replace the InkWell.onTap callback with this updated version
             onTap: () {
               Navigator.push(
                 context,
@@ -88,16 +89,12 @@ class ScheduleCalenderScreenState extends State<ScheduleCalenderScreen> {
                     scheduleDate: DateTime.parse(schedule.date),
                   ),
                 ),
-              ).then((result) {
-                // Check if a change was made (result == true)
-                if (result == true) {
-                  // First refresh this component's data
-                  _fetchSchedules();
-
-                  // Then call the parent's refresh callback if provided
-                  if (widget.onScheduleUpdated != null) {
-                    widget.onScheduleUpdated!();
-                  }
+              ).then((_) {
+                // Always refresh when returning from the form screen
+                print("Returned from ScheduleFormScreen, refreshing data...");
+                _fetchSchedules();
+                if (widget.onScheduleUpdated != null) {
+                  widget.onScheduleUpdated!();
                 }
               });
             },
