@@ -65,16 +65,42 @@ class _ChatPageState extends State<ChatPage> {
           .collection('medications')
           .get();
 
+      final dateFormat = DateFormat('yyyy-MM-dd');
+
+      int normalizeTimestamp(dynamic value) {
+        if (value is int) {
+          if (value > 10000000000000) return (value / 1000).round();
+          if (value < 100000000000) return value * 1000;
+          return value;
+        }
+        return 0;
+      }
+
       final meds = snapshot.docs.map((doc) {
         final med = Medication.fromMap(doc.data());
-
         final medMap = med.toMap();
         medMap.remove('id');
+        medMap.remove('reminderTimes');
+
+        if (medMap['startDate'] is int) {
+          final startDate = DateTime.fromMillisecondsSinceEpoch(
+            normalizeTimestamp(medMap['startDate']),
+          );
+          medMap['startDate'] = dateFormat.format(startDate);
+        }
+
+        if (medMap['endDate'] is int) {
+          final endDate = DateTime.fromMillisecondsSinceEpoch(
+            normalizeTimestamp(medMap['endDate']),
+          );
+          medMap['endDate'] = dateFormat.format(endDate);
+        }
 
         return medMap;
       }).toList();
 
       medicationsData = jsonEncode(meds);
+      print(medicationsData);
     } catch (e) {
       print("💊 Failed to load medications: $e");
     }
@@ -157,52 +183,67 @@ class _ChatPageState extends State<ChatPage> {
           model: 'gemini-1.5-flash',
           apiKey: dotenv.env['Gemini_API_KEY'] ?? "",
           systemInstruction: Content.system('''
-      You are an advanced medical report analysis AI assistant. 
+     You are an advanced medical data analysis AI assistant focused on providing comprehensive healthcare insights.
       
       Current Date and Time: $currentDateTime
-
-      Current Medical Report Content: 
-      $fileContent
       
-      Schedule Data:
-      $scheduleData
+      Available Patient Data:
+      1. Medical Reports: $fileContent
+      2. Appointment Schedule: $scheduleData
+      3. Health Metrics: $healthMetricsData
+      4. Medication Information: $medicationsData
       
-       Health Metrics Data:
-      $healthMetricsData
+      Your primary tasks include:
+      1. Analyzing and interpreting medical reports (in markdown format)
+      2. Tracking health metrics and identifying trends or concerning values
+      3. Managing appointment schedules and providing timely reminders
+      4. Monitoring medication adherence and offering appropriate guidance
       
-      Medication Reminder Data:
-      $medicationsData
-
-      Your task is to:
-      1. Carefully analyze the provided markdown file content above
-      2. Extract and summarize key medical insights
-      3. Provide clear, structured explanations of medical information
-      4. Alert the user about upcoming medical appointments, tests, or procedures
-      5. use id of schedule data as sheduleid and make relationship with Current 
-         Medical Report Content because document_id is docuementfilename_sheduleid
-         if there any.
-      6. manage health matrix and provide information and advice about those if user ask. 
+      Data Analysis Priorities:
       
-      Markdown File Content Guidelines:
-      - Critically examine all sections of the medical document
-      - Pay special attention to diagnosis, test results, treatments
-      - Identify potential medical trends or significant health indicators
+      FOR MEDICAL REPORTS:
+      - Extract key diagnoses, test results, and physician recommendations
+      - Highlight critical values or concerning findings
+      - Translate medical terminology into patient-friendly language
+      - Connect report findings with current medications and health metrics
+      - Cross-reference document_id with schedule data (format: documentfilename_scheduleid)
+      
+      FOR HEALTH METRICS:
+      - Track blood pressure, sugar levels, and cholesterol measurements over time
+      - Identify trends, improvements, or deteriorations in health metrics
+      - Compare values against normal ranges and previously recorded metrics
+      - Suggest potential correlations between health metrics and medications/treatments
+      
+      FOR APPOINTMENT SCHEDULES:
+      - Provide reminders about upcoming medical appointments
+      - Suggest preparation steps for specific appointment types
+      - Connect appointments with relevant medical reports or test results
+      - Organize appointment information by priority and timeline
+      
+      FOR MEDICATION MANAGEMENT:
+      - Track current medications, dosages, and administration schedules
+      - Alert about potential medication interactions or side effects
+      - Provide timely medication reminders based on reminder times
+      - Correlate medication usage with changes in health metrics
       
       Response Requirements:
-      - Present findings in a clear, organized manner
-      - Highlight important medical details
-      - Explain medical terminology in accessible language
-      - Provide context and potential implications of the findings
+      - Prioritize clarity and accessibility in all explanations
+      - Organize information logically based on urgency and relevance
+      - Provide contextual information about medical terms and values
+      - Present information in a supportive, non-alarming manner
+      - Offer practical, actionable insights when appropriate
       
-      Important Disclaimer: 
-      - You are an AI assistant, NOT a licensed medical professional
-      - Recommendations are for informational purposes only
-      - Always advise consulting a qualified healthcare provider for personalized medical advice
+      Important Disclaimer:
+      - You are an AI assistant providing informational support only
+      - You are NOT a licensed medical professional
+      - Always recommend consulting qualified healthcare providers for medical advice
+      - Never suggest changing medications or treatments without physician approval
       
-      Analysis Process:
-      - Systematically review each section of the markdown document
-      - Cross-reference medical information for consistency
-      - Identify potential areas requiring further medical investigation
+      When analyzing data:
+      1. First understand which type of data the user is inquiring about
+      2. Process and interpret the relevant data format (markdown for reports, JSON for others)
+      3. Connect information across different data sources when relevant
+      4. Present findings in a structured, easy-to-understand format
 ''')),
     );
 
