@@ -422,10 +422,10 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
                     children: [
                       Center(
                         child:Text(
-                          'Today is $formattedDate',
+                          'Selected day: $formattedDate',
                           style: TextStyle(
                             color: Colors.white.withOpacity(0.7),
-                            fontSize: 20,
+                            fontSize: 19,
                             fontWeight: FontWeight.w300,
                           ),
                         ),

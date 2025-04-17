@@ -4,6 +4,8 @@ import 'package:pulse/UI/components/HMUI.dart';
 import 'package:pulse/UI/components/NotificationLogsComponent.dart';
 import 'package:pulse/UI/components/dashboardCalender.dart';
 
+import '../allHMUI.dart';
+
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
 
@@ -53,8 +55,38 @@ class _DashboardPageState extends State<DashboardPage> {
             Text("Health Matrix"),
             const SizedBox(height: 7),
             HMUIScreen(),
-            const SizedBox(height: 7),
-            Text("Recent Notification"),
+            SizedBox(
+              height: 32,
+              width: 80, // Adjust width as needed
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => HealthMetricsPage(),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  backgroundColor: Colors.black87,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    side: BorderSide(color: Colors.white24, width: 1),
+                  ),
+                  textStyle: TextStyle(fontSize: 12),
+                ),
+                child: Text(
+                  'See More',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text("Upcoming Notification"),
             const SizedBox(height: 7),
             // Just include NotificationLogsComponent without Expanded
             const SizedBox(

@@ -269,7 +269,7 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
       frequency: _reminderTimes.length,
       notes: _notesController.text.isNotEmpty ? _notesController.text : null,
       userId: userId,
-      startDate: widget.scheduleDate,
+      startDate: DateTime.now(),
       endDate: _endDate,
     );
 
