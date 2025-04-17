@@ -66,10 +66,10 @@ class _AddHMUIState extends State<AddHMUI> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Today is $formattedDate',
+              'Selected day: $formattedDate',
               style: TextStyle(
                 color: Colors.white.withOpacity(0.7),
-                fontSize: 24,
+                fontSize: 23,
                 fontWeight: FontWeight.w300,
               ),
             ),
