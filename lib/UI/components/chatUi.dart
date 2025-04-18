@@ -8,7 +8,6 @@ import 'package:pulse/models/Schedules.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
 import '../../models/Medication.dart';
 
 
@@ -180,7 +179,7 @@ class _ChatPageState extends State<ChatPage> {
 
     _provider = GeminiProvider(
       model: GenerativeModel(
-          model: 'gemini-1.5-flash',
+          model: 'gemini-2.0-flash',
           apiKey: dotenv.env['Gemini_API_KEY'] ?? "",
           systemInstruction: Content.system('''
      You are an advanced medical data analysis AI assistant focused on providing comprehensive healthcare insights.

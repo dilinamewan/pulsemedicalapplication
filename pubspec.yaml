@@ -18,7 +18,7 @@ dependencies:
   flutter_dotenv: ^5.2.1
   cupertino_icons: ^1.0.8
   shared_preferences: ^2.5.2
-  flutter_ai_toolkit: ^0.7.0
+  flutter_ai_toolkit: ^0.7.1
   google_generative_ai: ^0.4.6
   flutter_native_splash: ^2.4.4
   awesome_notifications: ^0.10.0

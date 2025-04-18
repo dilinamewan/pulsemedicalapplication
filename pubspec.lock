@@ -498,10 +498,10 @@ packages:
     dependency: "direct main"
     description:
       name: flutter_ai_toolkit
-      sha256: a33fbba2da370fdc4629cee6ff15daa3a8abd2ac79381654b4a678ebf4f2e126
+      sha256: b12585af34599b524b0aae37e2a639af86b86d17e5330e4f63e71f6c921b913b
       url: "https://pub.dev"
     source: hosted
-    version: "0.7.0"
+    version: "0.7.1"
   flutter_colorpicker:
     dependency: "direct main"
     description:
