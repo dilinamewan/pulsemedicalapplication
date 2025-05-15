@@ -141,18 +141,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
         // Upload new image if selected
         if (_imageFile != null) {
           newImageUrl = await _uploadImageToImgBB(_imageFile!);
+          if (newImageUrl == null) {
+            throw Exception("Failed to upload image");
+          }
         }
 
-        // Update Firestore document
-        await _firestore.collection('users').doc(user.uid).update({
+        // Create an update map that only includes fields we want to update
+        final Map<String, dynamic> updateData = {
           'fullName': _fullNameController.text.trim(),
           'phoneNumber': _phoneNumberController.text.trim(),
           'emergencyContactName': _emergencyContactNameController.text.trim(),
-          'emergencyContactNumber':
-              _emergencyContactNumberController.text.trim(),
-          'gender': _gender,
-          'profileImageUrl': newImageUrl,
-        });
+          'emergencyContactNumber': _emergencyContactNumberController.text.trim(),
+        };
+
+        // Only add gender if it's not null
+        if (_gender != null) {
+          updateData['gender'] = _gender;
+        }
+
+        // Only add profileImageUrl if we have a valid URL
+        if (newImageUrl != null && newImageUrl.isNotEmpty) {
+          updateData['profileImageUrl'] = newImageUrl;
+        }
+
+        // Make sure the document exists before updating it
+        DocumentSnapshot docSnapshot = await _firestore.collection('users').doc(user.uid).get();
+
+        if (docSnapshot.exists) {
+          // Update the document with merge: true to ensure we don't overwrite fields not included
+          await _firestore.collection('users').doc(user.uid).update(updateData);
+        } else {
+          // If document doesn't exist, create it
+          await _firestore.collection('users').doc(user.uid).set(updateData, SetOptions(merge: true));
+        }
 
         setState(() {
           _isEditing = false;
