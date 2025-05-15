@@ -222,7 +222,7 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
           // Launch PDF parsing in background without awaiting
           final parser = DocumentParser();
           // Just fire and forget - the parsing will happen in background
-          parser.parseDocument(path, customId!).then((result) {
+          parser.parseDocument(path, customId!,context).then((result) {
             // Optional: Log the result for debugging
             if (kDebugMode) {
               print('PDF parsed in background: ${result['success']}');
@@ -299,7 +299,7 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
       List<String> secondPaths = extractSecondPaths(docs);
       for (var path in secondPaths) {
         if (path.toLowerCase().endsWith('.pdf')) {
-          parser.parseDocument(path, widget.scheduleId!).then((result) {
+          parser.parseDocument(path, widget.scheduleId!,context).then((result) {
             if (kDebugMode) {
               print('PDF parsed in background: ${result['success']}');
             }
