@@ -169,14 +169,6 @@ class _HealthMetricsPageState extends State<HealthMetricsPage> {
                 color: Colors.grey[400],
               ),
             ),
-            SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () {
-                // Navigate to add health metric page
-                // You can implement navigation to your add metric form here
-              },
-              child: Text('Add Health Metrics'),
-            ),
           ],
         ),
       )
