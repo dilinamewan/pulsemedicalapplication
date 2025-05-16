@@ -77,6 +77,64 @@ class ScheduleService {
     return schedules;
   }
 
+  Future<bool> checkForOverlap(
+      String date,
+      String startTime,
+      String endTime,
+      [String? excludeScheduleId]
+      ) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? userId = prefs.getString('user_id');
+
+    try {
+      // Get all schedules for the specified date
+      QuerySnapshot querySnapshot = await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('schedules')
+          .where('date', isEqualTo: date)
+          .get();
+
+      // Parse the new start and end times
+      final newStartParts = startTime.split(':');
+      final newEndParts = endTime.split(':');
+
+      final newStartMinutes = int.parse(newStartParts[0]) * 60 + int.parse(newStartParts[1]);
+      final newEndMinutes = int.parse(newEndParts[0]) * 60 + int.parse(newEndParts[1]);
+
+      // Check for overlap with each existing schedule
+      for (var doc in querySnapshot.docs) {
+        // Skip the current schedule if we're updating
+        if (excludeScheduleId != null && doc.id == excludeScheduleId) {
+          continue;
+        }
+
+        final data = doc.data() as Map<String, dynamic>;
+
+        // Parse existing schedule's start and end time
+        final existingStartParts = (data['start_time'] as String).split(':');
+        final existingEndParts = (data['end_time'] as String).split(':');
+
+        final existingStartMinutes =
+            int.parse(existingStartParts[0]) * 60 + int.parse(existingStartParts[1]);
+        final existingEndMinutes =
+            int.parse(existingEndParts[0]) * 60 + int.parse(existingEndParts[1]);
+
+        // Check if schedules overlap
+        // Overlap occurs when:
+        // new start is before existing end AND new end is after existing start
+        if (newStartMinutes < existingEndMinutes && newEndMinutes > existingStartMinutes) {
+          return true; // Overlap detected
+        }
+      }
+
+      return false; // No overlap
+    } catch (e) {
+      debugPrint('Error checking for schedule overlap: $e');
+      throw e; // Rethrow to handle in the UI
+    }
+  }
+
   /// Add a new schedule
   Future<String?> addSchedule(
       String title,

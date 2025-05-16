@@ -168,7 +168,14 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
       return; // Prevent further execution
     }
 
-    // Show loading dialog
+    // Format date and times for overlap check
+    String formattedDate =
+        "${widget.scheduleDate.year}-${widget.scheduleDate.month.toString().padLeft(2, '0')}-${widget.scheduleDate.day.toString().padLeft(2, '0')}";
+
+    String formattedStartTime = "${startTime.hour.toString().padLeft(2, '0')}:${startTime.minute.toString().padLeft(2, '0')}";
+    String formattedEndTime = "${endTime.hour.toString().padLeft(2, '0')}:${endTime.minute.toString().padLeft(2, '0')}";
+
+    // Show loading dialog for overlap check
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -182,7 +189,7 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
               ),
               SizedBox(width: 16),
               Text(
-                "Saving...",
+                "Checking schedule...",
                 style: TextStyle(color: Colors.white),
               ),
             ],
@@ -192,17 +199,62 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
     );
 
     try {
-      String formattedDate =
-          "${widget.scheduleDate.year}-${widget.scheduleDate.month.toString().padLeft(2, '0')}-${widget.scheduleDate.day.toString().padLeft(2, '0')}";
-
       ScheduleService scheduleService = ScheduleService();
 
-      // 1. First save the basic schedule data
+      // Check for overlap before saving
+      bool hasOverlap = await scheduleService.checkForOverlap(
+          formattedDate,
+          formattedStartTime,
+          formattedEndTime
+      );
+
+      // Close the loading dialog
+      if (mounted) {
+        Navigator.pop(context);
+      }
+
+      if (hasOverlap) {
+        // Show overlap error and return
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Schedule overlaps with an existing event. Please choose a different time.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      // If no overlap, proceed with saving - show saving dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) {
+          return AlertDialog(
+            backgroundColor: Colors.grey[900],
+            content: Row(
+              children: const [
+                CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+                SizedBox(width: 16),
+                Text(
+                  "Saving...",
+                  style: TextStyle(color: Colors.white),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+
+      // Continue with your existing save logic
       String? customId = await scheduleService.addSchedule(
         title,
         formattedDate,
-        "${startTime.hour}:${startTime.minute}",
-        "${endTime.hour}:${endTime.minute}",
+        formattedStartTime,
+        formattedEndTime,
         location ?? GeoPoint(0.0, 0.0),
         alerts ?? '10m',
         Tcolor != null
@@ -212,18 +264,14 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
         docs,
       );
 
-      // 2. Start file upload in parallel
+      // Continue with the rest of your existing code
       final uploadFuture = uploadFile();
 
-      // 3. Start PDF parsing in the background and don't wait for it
       List<String> secondPaths = extractSecondPaths(docs);
       for (var path in secondPaths) {
         if (path.toLowerCase().endsWith('.pdf')) {
-          // Launch PDF parsing in background without awaiting
           final parser = DocumentParser();
-          // Just fire and forget - the parsing will happen in background
-          parser.parseDocument(path, customId!,context).then((result) {
-            // Optional: Log the result for debugging
+          parser.parseDocument(path, customId!, context).then((result) {
             if (kDebugMode) {
               print('PDF parsed in background: ${result['success']}');
             }
@@ -231,10 +279,8 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
         }
       }
 
-      // 4. Wait for upload to complete
       await uploadFuture;
 
-      // 5. Close dialogs and navigate back
       if (mounted) {
         Navigator.pop(context); // Close loading dialog
         Navigator.pop(context, true); // Go back
@@ -253,6 +299,7 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
     }
   }
 
+// Modify the updateSchedule method to include overlap check
   Future<void> updateSchedule() async {
     String title = titleController.text.trim();
 
@@ -266,19 +313,72 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
     String formattedDate =
         "${widget.scheduleDate.year}-${widget.scheduleDate.month.toString().padLeft(2, '0')}-${widget.scheduleDate.day.toString().padLeft(2, '0')}";
 
-    ScheduleService scheduleService = ScheduleService();
+    String formattedStartTime = "${startTime.hour.toString().padLeft(2, '0')}:${startTime.minute.toString().padLeft(2, '0')}";
+    String formattedEndTime = "${endTime.hour.toString().padLeft(2, '0')}:${endTime.minute.toString().padLeft(2, '0')}";
+
+    // Show loading dialog for overlap check
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.grey[900],
+          content: Row(
+            children: const [
+              CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+              SizedBox(width: 16),
+              Text(
+                "Checking schedule...",
+                style: TextStyle(color: Colors.white),
+              ),
+            ],
+          ),
+        );
+      },
+    );
 
     try {
-      // 1. Delete files that were removed - do this first
+      ScheduleService scheduleService = ScheduleService();
+
+      // Check for overlap before saving, excluding the current schedule ID
+      bool hasOverlap = await scheduleService.checkForOverlap(
+          formattedDate,
+          formattedStartTime,
+          formattedEndTime,
+          widget.scheduleId // Pass the current schedule ID to exclude from the check
+      );
+
+      // Close the loading dialog
+      if (mounted) {
+        Navigator.pop(context);
+      }
+
+      if (hasOverlap) {
+        // Show overlap error and return
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Schedule overlaps with an existing event. Please choose a different time.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      // If no overlap, proceed with updating
+
+      // Continue with your existing update logic
       final deleteFilesFuture = _deleteRemovedFiles();
 
-      // 2. Update schedule in database
       final updateScheduleFuture = scheduleService.updateSchedule(
         widget.scheduleId!,
         title,
         formattedDate,
-        "${startTime.hour}:${startTime.minute}",
-        "${endTime.hour}:${endTime.minute}",
+        formattedStartTime,
+        formattedEndTime,
         location ?? GeoPoint(0.0, 0.0),
         alerts ?? '10m',
         Tcolor != null
@@ -288,18 +388,15 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
         docs,
       );
 
-      // 3. Start file upload in parallel
       final uploadFuture = uploadFile();
 
-      // 4. Clear existing PDF data
       final parser = DocumentParser();
       await parser.deletepdf(widget.scheduleId!);
 
-      // 5. Process documents in background
       List<String> secondPaths = extractSecondPaths(docs);
       for (var path in secondPaths) {
         if (path.toLowerCase().endsWith('.pdf')) {
-          parser.parseDocument(path, widget.scheduleId!,context).then((result) {
+          parser.parseDocument(path, widget.scheduleId!, context).then((result) {
             if (kDebugMode) {
               print('PDF parsed in background: ${result['success']}');
             }
@@ -307,14 +404,12 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
         }
       }
 
-      // 6. Wait for pending operations (except PDF parsing)
       await Future.wait([
         deleteFilesFuture,
         updateScheduleFuture,
         uploadFuture,
       ]);
 
-      // 7. Show success and navigate
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Schedule updated successfully')),
