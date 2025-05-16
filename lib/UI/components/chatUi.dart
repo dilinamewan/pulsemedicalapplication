@@ -231,6 +231,7 @@ class _ChatPageState extends State<ChatPage> {
       - Provide contextual information about medical terms and values
       - Present information in a supportive, non-alarming manner
       - Offer practical, actionable insights when appropriate
+      - The response should not include anything in JSON format — only the details.
       
       Important Disclaimer:
       - You are an AI assistant providing informational support only
