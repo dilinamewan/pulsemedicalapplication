@@ -6,7 +6,6 @@ import 'package:archive/archive.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 
 class _ParsingJob {
   final String filePath;
@@ -161,7 +160,7 @@ class DocumentParser {
 
   /// Parses a document file in the background and stores the result in Firestore
   /// Returns the document ID and markdown content on success
-  Future<Map<String, dynamic>> parseDocument(String result,String customid, BuildContext context) async {
+  Future<Map<String, dynamic>> parseDocument(String result,String customid) async {
     try {
       final filePath = result;
       final fileName = filePath.split('/').last;
@@ -196,10 +195,6 @@ class DocumentParser {
             .set({
           'compressedContent': compressedMarkdown,
         });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Document "$fileName" parsed successfully')),
-        );
 
         // Return success result
         return {
