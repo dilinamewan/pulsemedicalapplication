@@ -40,6 +40,62 @@ A personal health management app that empowers users to monitor vital health met
 - Notifications for:
   - Clinic schedules appointments
   - Medication Reminders
+ 
+
+## Getting Started / How to Use
+
+### 0. Project Setup
+
+```bash
+# Clone the repository
+git clone https://github.com/dilinamewan/pulsemedicalapplication.git
+cd pulsemedicalapplication
+```
+Follow these steps to run the app locally:
+
+### 1. Create Firebase Project
+
+* Go to [Firebase Console](https://console.firebase.google.com/)
+* Create a new project
+* Enable **Authentication** and **database**
+* Follow the setup guide for Firebase with Flutter:
+  👉 [https://firebase.flutter.dev/docs/cli](https://firebase.flutter.dev/docs/cli)
+
+### 2. Configure Supabase
+
+* Go to [Supabase.io](https://supabase.io) and create a project
+* Enable cloud storage for appoinment sheduling report storage.
+* Get the **anon key** and **API URL**
+  Replace them in `lib/main.dart` or wherever your Supabase client is initialized
+
+### 3. Add Environment Variables
+
+Create a `.env` file in the root of your Flutter project and add your keys:
+
+```env
+Gemini_API_KEY=your_gemini_api_key_here
+Llama_Parse_API_KEY=your_llama_parse_key_here
+```
+
+Make sure you are using a package like `flutter_dotenv` to load these values.
+
+### 4. Install Dependencies
+
+Run the following in your project root:
+
+```bash
+flutter pub get
+```
+
+### 5. Run the App
+
+Use:
+
+```bash
+flutter run
+```
+
+on your preferred emulator or physical device.
 
 ## Team Members
 <div align="left">
